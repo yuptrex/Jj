@@ -1,301 +1,260 @@
 """
-Personal file storage/retrieval bot -- Render-friendly version.
+Telegram File Indexer + Search Bot
+----------------------------------
+- Add this bot as an ADMIN to your channel.
+- Every file posted to the channel (document, photo, video, audio, voice, video_note)
+  gets auto-saved into MongoDB with its filename/caption + Telegram file_id.
+- DM the bot any text -> it searches stored filenames/captions (case-insensitive,
+  partial match) and sends matching files back to you.
 
-Your camuz app posts files to a private Telegram channel. This bot watches
-that channel, indexes every new file by its filename (extension stripped)
-or caption, and lets you retrieve any file later by sending that code in a
-private chat with the bot. Only your Telegram user ID gets a response.
-
-This version is built to run on Render's free Web Service tier:
-
-- It runs a tiny HTTP health endpoint (required so Render treats it as a
-  web service and keeps it in rotation instead of a background worker,
-  which is not free).
-- Render's free tier has NO persistent disk -- any local file is wiped on
-  every restart/redeploy/sleep-wake cycle. So instead of a local SQLite
-  file, the index (code -> file_id) is stored as a JSON file in a small
-  GitHub repo you control: read on startup, rewritten whenever a new file
-  is indexed. That survives restarts because it never lives on Render's
-  disk at all.
-
-Setup
------
-1. Telegram side (same as before):
-   - API_ID / API_HASH from https://my.telegram.org
-   - BOT_TOKEN from @BotFather
-   - Add the bot as ADMIN of your private channel
-   - CHANNEL_ID: forward a channel message to @userinfobot to get it
-   - OWNER_ID: message @userinfobot directly to get your own user id
-
-2. GitHub side (for persistence):
-   - Create a small private repo, e.g. "camuz-bot-index"
-   - Create a Personal Access Token (fine-grained, scoped ONLY to that
-     repo, with "Contents: Read and write" permission) at
-     https://github.com/settings/tokens
-   - GITHUB_TOKEN     = that token
-   - GITHUB_REPO      = "yourusername/camuz-bot-index"
-   - GITHUB_INDEX_PATH = "index.json"   (default, fine to leave as-is)
-
-3. Set all of the above as environment variables on Render.
-   See DEPLOY_RENDER.md for exact steps. Render also injects PORT
-   automatically -- you don't set that one yourself.
+Run modes:
+- Polling (default): good for local/dev or a Render "Background Worker".
+- Webhook: good for a Render "Web Service" (set WEBHOOK_URL env var).
 """
 
-import os
-import re
-import json
-import base64
-import asyncio
 import logging
+import os
+from datetime import datetime, timezone
 
-import requests
-from aiohttp import web
-from pyrogram import Client, filters, idle
-from pyrogram.types import Message
-
-logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
-logger = logging.getLogger("camuz_storage_bot")
-
-# ---- Telegram configuration ----
-API_ID = int(os.environ["API_ID"])
-API_HASH = os.environ["API_HASH"]
-BOT_TOKEN = os.environ["BOT_TOKEN"]
-CHANNEL_ID = int(os.environ["CHANNEL_ID"])
-OWNER_ID = int(os.environ["OWNER_ID"])
-
-# ---- GitHub-backed index configuration ----
-GITHUB_TOKEN = os.environ["GITHUB_TOKEN"]
-GITHUB_REPO = os.environ["GITHUB_REPO"]  # "username/repo"
-GITHUB_INDEX_PATH = os.environ.get("GITHUB_INDEX_PATH", "index.json")
-GITHUB_API_URL = f"https://api.github.com/repos/{GITHUB_REPO}/contents/{GITHUB_INDEX_PATH}"
-GITHUB_HEADERS = {
-    "Authorization": f"Bearer {GITHUB_TOKEN}",
-    "Accept": "application/vnd.github+json",
-}
-
-PORT = int(os.environ.get("PORT", 8080))
-
-app = Client("camuz_storage_bot", api_id=API_ID, api_hash=API_HASH, bot_token=BOT_TOKEN)
-
-# In-memory index, loaded from / synced to GitHub.
-INDEX = {}
-INDEX_SHA = None
-
-
-def _github_load():
-    resp = requests.get(GITHUB_API_URL, headers=GITHUB_HEADERS, timeout=15)
-    if resp.status_code == 200:
-        data = resp.json()
-        content = base64.b64decode(data["content"]).decode("utf-8")
-        return json.loads(content or "{}"), data["sha"]
-    if resp.status_code == 404:
-        return {}, None
-    resp.raise_for_status()
-    return {}, None
-
-
-def _github_save(index, sha):
-    content_b64 = base64.b64encode(json.dumps(index, indent=2).encode("utf-8")).decode("ascii")
-    payload = {"message": "update file index", "content": content_b64}
-    if sha:
-        payload["sha"] = sha
-    resp = requests.put(GITHUB_API_URL, headers=GITHUB_HEADERS, json=payload, timeout=15)
-    resp.raise_for_status()
-    return resp.json()["content"]["sha"]
-
-
-async def load_index():
-    global INDEX, INDEX_SHA
-    INDEX, INDEX_SHA = await asyncio.to_thread(_github_load)
-    logger.info("Loaded %d indexed files from GitHub", len(INDEX))
-
-
-async def save_index():
-    global INDEX_SHA
-    INDEX_SHA = await asyncio.to_thread(_github_save, INDEX, INDEX_SHA)
-
-
-def normalize_name(name: str) -> str:
-    """Clean a filename/caption for indexing and searching.
-
-    Mirrors the cleanup used by larger Telegram file-store bots: strip the
-    extension, replace punctuation with spaces, collapse whitespace, and
-    lowercase everything. This means "Night_Sky-2024.mp4" and "night sky
-    2024" both normalize to "night sky 2024".
-    """
-    name = os.path.splitext(name)[0]
-    name = re.sub(r"[_\-.#+$%^&*()!~`,;:\"'?/<>\[\]{}=|\\]", " ", name)
-    name = re.sub(r"\s+", " ", name).strip().lower()
-    return name
-
-
-def build_search_regex(query: str):
-    """Build a flexible, order-preserving regex from a search query.
-
-    Multi-word queries match the words in order with anything in between
-    (so "night sky" matches "Night_Sky_2024" and also "Night Under Sky"),
-    case-insensitively. Returns None for an empty query.
-    """
-    query = query.strip().lower()
-    if not query:
-        return None
-    words = [re.escape(w) for w in query.split()]
-    pattern = r".*".join(words)
-    try:
-        return re.compile(pattern, flags=re.IGNORECASE)
-    except re.error:
-        return None
-
-
-def find_matches(query: str, limit: int = 8):
-    """Search INDEX for codes matching query.
-
-    Exact match (after normalization) comes first if present, then other
-    matches in most-recently-indexed-first order.
-    """
-    regex = build_search_regex(query)
-    if regex is None:
-        return []
-
-    exact = query.strip().lower()
-    ordered = []
-    if exact in INDEX:
-        ordered.append(exact)
-    for code in reversed(list(INDEX.keys())):
-        if code in ordered:
-            continue
-        if regex.search(code):
-            ordered.append(code)
-    return ordered[:limit]
-
-
-def extract_file(message: Message):
-    if message.document:
-        return message.document.file_id, "document", message.document.file_name
-    if message.video:
-        return message.video.file_id, "video", message.video.file_name
-    if message.audio:
-        return message.audio.file_id, "audio", message.audio.file_name
-    if message.photo:
-        return message.photo.file_id, "photo", None
-    if message.voice:
-        return message.voice.file_id, "voice", None
-    if message.animation:
-        return message.animation.file_id, "animation", message.animation.file_name
-    return None, None, None
-
-
-@app.on_message(
-    filters.chat(CHANNEL_ID)
-    & (filters.document | filters.video | filters.audio | filters.photo | filters.voice | filters.animation)
+from dotenv import load_dotenv
+from pymongo import MongoClient, ASCENDING, TEXT
+from pymongo.errors import PyMongoError
+from telegram import Update, InputMediaPhoto
+from telegram.constants import ParseMode
+from telegram.ext import (
+    Application,
+    ApplicationBuilder,
+    ChatMemberHandler,
+    CommandHandler,
+    ContextTypes,
+    MessageHandler,
+    filters,
 )
-async def index_new_file(client: Client, message: Message):
-    file_id, file_type, file_name = extract_file(message)
-    if not file_id:
-        return
 
-    raw_code = message.caption or file_name
-    if not raw_code:
-        logger.warning("Message %s has no filename or caption, skipping", message.id)
-        try:
-            await message.reply("⚠️ No filename or caption found — this file was NOT indexed. Add a caption and resend.")
-        except Exception:
-            logger.exception("Failed to send 'no caption' warning")
-        return
+load_dotenv()
 
-    code = normalize_name(raw_code)
-    INDEX[code] = {"file_id": file_id, "file_type": file_type, "message_id": message.id}
-    try:
-        await save_index()
-        logger.info("Indexed '%s' -> message %s", code, message.id)
-        await message.reply(f"✅ File Indexed\nCode: `{code}`")
-    except Exception:
-        logger.exception("Failed to save index to GitHub after indexing '%s'", code)
-        try:
-            await message.reply(f"⚠️ Indexed '{code}' locally, but failed to save to GitHub. Check Render logs.")
-        except Exception:
-            logger.exception("Failed to send GitHub-save-failure warning")
+# ---------------------------------------------------------------------------
+# Config
+# ---------------------------------------------------------------------------
+BOT_TOKEN = os.environ["BOT_TOKEN"]
+MONGO_URI = os.environ["MONGO_URI"]
+MONGO_DB_NAME = os.environ.get("MONGO_DB_NAME", "tgfilebot")
+CHANNEL_ID = os.environ.get("CHANNEL_ID")  # optional: restrict indexing to this channel id (e.g. -1001234567890)
+OWNER_ID = os.environ.get("OWNER_ID")  # optional: restrict who can search/receive files
+WEBHOOK_URL = os.environ.get("WEBHOOK_URL")  # if set, run in webhook mode
+PORT = int(os.environ.get("PORT", "8080"))
+
+logging.basicConfig(
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+    level=logging.INFO,
+)
+logger = logging.getLogger("tgfilebot")
+
+# ---------------------------------------------------------------------------
+# Mongo setup
+# ---------------------------------------------------------------------------
+mongo_client = MongoClient(MONGO_URI)
+db = mongo_client[MONGO_DB_NAME]
+files_col = db["files"]
+
+# Indexes: fast lookup + text search fallback
+files_col.create_index([("file_unique_id", ASCENDING)], unique=True)
+files_col.create_index([("name", TEXT), ("caption", TEXT)], name="name_caption_text")
 
 
-@app.on_message(filters.private & filters.text & ~filters.command("start") & filters.user(OWNER_ID))
-async def retrieve_file(client: Client, message: Message):
-    query = message.text.strip()
-    matches = find_matches(query)
-
-    if not matches:
-        await message.reply(f"❌ File Not Found\nNo file matches: `{query}`")
-        return
-
-    senders = {
-        "document": client.send_document,
-        "video": client.send_video,
-        "audio": client.send_audio,
-        "photo": client.send_photo,
-        "voice": client.send_voice,
-        "animation": client.send_animation,
+def save_file_record(*, file_id, file_unique_id, name, caption, file_type,
+                      chat_id, message_id, file_size=None):
+    """Upsert a file record. Safe to call repeatedly (unique on file_unique_id)."""
+    doc = {
+        "file_id": file_id,
+        "file_unique_id": file_unique_id,
+        "name": name or "",
+        "caption": caption or "",
+        "file_type": file_type,
+        "chat_id": chat_id,
+        "message_id": message_id,
+        "file_size": file_size,
+        "saved_at": datetime.now(timezone.utc),
     }
+    try:
+        files_col.update_one(
+            {"file_unique_id": file_unique_id},
+            {"$set": doc},
+            upsert=True,
+        )
+        logger.info("Saved file record: %s (%s)", name or caption, file_type)
+    except PyMongoError:
+        logger.exception("Failed to save file record to MongoDB")
 
-    # Single match (or an exact hit) -> send it directly.
-    if len(matches) == 1:
-        code = matches[0]
-        entry = INDEX[code]
-        sender = senders.get(entry["file_type"])
-        if not sender:
-            logger.error("Unknown file_type '%s' stored for code '%s'", entry.get("file_type"), code)
-            await message.reply(f"⚠️ Error: Unknown file type stored for `{code}`. Check Render logs.")
-            return
-        try:
-            await message.reply(f"🔍 File Found: `{code}`\nSending now...")
-            await sender(message.chat.id, entry["file_id"])
-            logger.info("Sent file for code '%s' to user %s", code, message.chat.id)
-        except Exception as e:
-            logger.exception("Failed to send file for code '%s'", code)
-            await message.reply(f"⚠️ Error retrieving file for `{code}`.\n\n`{type(e).__name__}: {e}`")
+
+def search_files(query: str, limit: int = 10):
+    """Partial, case-insensitive match against name OR caption."""
+    query = query.strip()
+    if not query:
+        return []
+    regex_filter = {
+        "$or": [
+            {"name": {"$regex": query, "$options": "i"}},
+            {"caption": {"$regex": query, "$options": "i"}},
+        ]
+    }
+    return list(files_col.find(regex_filter).sort("saved_at", -1).limit(limit))
+
+
+# ---------------------------------------------------------------------------
+# Access control helper
+# ---------------------------------------------------------------------------
+def is_authorized(update: Update) -> bool:
+    if not OWNER_ID:
+        return True  # no restriction configured
+    return str(update.effective_user.id) == str(OWNER_ID)
+
+
+# ---------------------------------------------------------------------------
+# Handlers: indexing channel posts
+# ---------------------------------------------------------------------------
+async def index_channel_post(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    msg = update.channel_post
+    if msg is None:
         return
 
-    # Multiple matches -> list them so the user can pick the exact code.
-    listing = "\n".join(f"• `{c}`" for c in matches)
-    await message.reply(
-        f"🔎 Found {len(matches)} matches for `{query}`. Send the exact code:\n\n{listing}"
+    if CHANNEL_ID and str(msg.chat.id) != str(CHANNEL_ID):
+        return  # ignore other channels if restricted
+
+    file_obj = None
+    file_type = None
+    name = None
+
+    if msg.document:
+        file_obj = msg.document
+        file_type = "document"
+        name = msg.document.file_name
+    elif msg.video:
+        file_obj = msg.video
+        file_type = "video"
+        name = msg.video.file_name
+    elif msg.audio:
+        file_obj = msg.audio
+        file_type = "audio"
+        name = msg.audio.file_name or msg.audio.title
+    elif msg.voice:
+        file_obj = msg.voice
+        file_type = "voice"
+        name = None
+    elif msg.video_note:
+        file_obj = msg.video_note
+        file_type = "video_note"
+        name = None
+    elif msg.photo:
+        # photo is a list of sizes; take the largest
+        file_obj = msg.photo[-1]
+        file_type = "photo"
+        name = None
+
+    if file_obj is None:
+        return  # not a file post (e.g. plain text) - ignore
+
+    save_file_record(
+        file_id=file_obj.file_id,
+        file_unique_id=file_obj.file_unique_id,
+        name=name,
+        caption=msg.caption,
+        file_type=file_type,
+        chat_id=msg.chat.id,
+        message_id=msg.message_id,
+        file_size=getattr(file_obj, "file_size", None),
     )
 
 
-@app.on_message(filters.private & filters.command("start") & filters.user(OWNER_ID))
-async def start_cmd(client: Client, message: Message):
-    await message.reply(
-        f"👋 Bot is online.\n{len(INDEX)} files indexed.\n\nSend me a filename/code to get the file back."
+# ---------------------------------------------------------------------------
+# Handlers: user search in DM
+# ---------------------------------------------------------------------------
+async def start_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await update.message.reply_text(
+        "Send me part of a file name and I'll search the channel's indexed files "
+        "and send back any matches."
     )
 
 
-# Silently ignore everyone who isn't you.
-@app.on_message(filters.private & ~filters.user(OWNER_ID))
-async def ignore_others(client: Client, message: Message):
-    return
+async def stats_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if not is_authorized(update):
+        return
+    count = files_col.count_documents({})
+    await update.message.reply_text(f"Indexed files: {count}")
 
 
-# ---- Minimal HTTP server so Render treats this as a healthy web service ----
-async def health(request):
-    return web.Response(text=f"ok, {len(INDEX)} files indexed")
+async def handle_search_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if not is_authorized(update):
+        await update.message.reply_text("You're not authorized to use this bot.")
+        return
+
+    query = update.message.text
+    results = search_files(query)
+
+    if not results:
+        await update.message.reply_text(f"No files found matching \"{query}\".")
+        return
+
+    await update.message.reply_text(f"Found {len(results)} match(es). Sending...")
+
+    for doc in results:
+        label = doc.get("name") or doc.get("caption") or "(untitled)"
+        try:
+            ftype = doc["file_type"]
+            file_id = doc["file_id"]
+            if ftype == "document":
+                await context.bot.send_document(update.effective_chat.id, file_id, caption=label)
+            elif ftype == "video":
+                await context.bot.send_video(update.effective_chat.id, file_id, caption=label)
+            elif ftype == "audio":
+                await context.bot.send_audio(update.effective_chat.id, file_id, caption=label)
+            elif ftype == "voice":
+                await context.bot.send_voice(update.effective_chat.id, file_id)
+            elif ftype == "video_note":
+                await context.bot.send_video_note(update.effective_chat.id, file_id)
+            elif ftype == "photo":
+                await context.bot.send_photo(update.effective_chat.id, file_id, caption=label)
+        except Exception:
+            logger.exception("Failed to resend file %s", doc.get("_id"))
+            await update.message.reply_text(f"Couldn't resend: {label}")
 
 
-async def start_web_server():
-    webapp = web.Application()
-    webapp.router.add_get("/", health)
-    runner = web.AppRunner(webapp)
-    await runner.setup()
-    site = web.TCPSite(runner, "0.0.0.0", PORT)
-    await site.start()
-    logger.info("Health server listening on port %s", PORT)
+# ---------------------------------------------------------------------------
+# Entry point
+# ---------------------------------------------------------------------------
+def build_app() -> Application:
+    application = ApplicationBuilder().token(BOT_TOKEN).build()
+
+    application.add_handler(CommandHandler("start", start_cmd))
+    application.add_handler(CommandHandler("stats", stats_cmd))
+
+    # Any file posted to a channel this bot administers
+    application.add_handler(MessageHandler(filters.ChatType.CHANNEL, index_channel_post))
+
+    # Any private text message = a search query
+    application.add_handler(
+        MessageHandler(filters.ChatType.PRIVATE & filters.TEXT & ~filters.COMMAND, handle_search_text)
+    )
+
+    return application
 
 
-async def main():
-    await load_index()
-    await app.start()
-    await start_web_server()
-    logger.info("Bot is running.")
-    await idle()
-    await app.stop()
+def main():
+    application = build_app()
+
+    if WEBHOOK_URL:
+        logger.info("Starting in webhook mode on port %s", PORT)
+        application.run_webhook(
+            listen="0.0.0.0",
+            port=PORT,
+            url_path=BOT_TOKEN,
+            webhook_url=f"{WEBHOOK_URL.rstrip('/')}/{BOT_TOKEN}",
+            allowed_updates=Update.ALL_TYPES,
+        )
+    else:
+        logger.info("Starting in polling mode")
+        application.run_polling(allowed_updates=Update.ALL_TYPES)
 
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    main()
