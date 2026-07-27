@@ -44,6 +44,12 @@ OWNER_ID = os.environ.get("OWNER_ID")  # optional: restrict who can search/recei
 WEBHOOK_URL = os.environ.get("WEBHOOK_URL")  # if set, run in webhook mode
 PORT = int(os.environ.get("PORT", "8080"))
 
+# File filtering: keep this bot to small, non-video files only.
+MAX_FILE_SIZE_MB = int(os.environ.get("MAX_FILE_SIZE_MB", "20"))
+MAX_FILE_SIZE_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024
+# file_type values that are never indexed regardless of size (movies/clips)
+BLOCKED_FILE_TYPES = {"video", "video_note"}
+
 logging.basicConfig(
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
     level=logging.INFO,
@@ -153,6 +159,21 @@ async def index_channel_post(update: Update, context: ContextTypes.DEFAULT_TYPE)
 
     if file_obj is None:
         return  # not a file post (e.g. plain text) - ignore
+
+    # Strictly exclude movies/video content of any size.
+    if file_type in BLOCKED_FILE_TYPES:
+        logger.info("Skipped %s (%s): video content is not indexed", name or "(untitled)", file_type)
+        return
+
+    file_size = getattr(file_obj, "file_size", None)
+    # Skip anything over the size cap. If Telegram didn't report a size,
+    # err on the side of skipping rather than indexing something unverified.
+    if file_size is None or file_size > MAX_FILE_SIZE_BYTES:
+        logger.info(
+            "Skipped %s (%s bytes): over %sMB limit or size unknown",
+            name or "(untitled)", file_size, MAX_FILE_SIZE_MB,
+        )
+        return
 
     save_file_record(
         file_id=file_obj.file_id,

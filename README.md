@@ -98,7 +98,24 @@ the bot will auto-register the webhook at startup. Free-tier Render web
 services sleep after inactivity, which can delay webhook delivery — a
 Background Worker with polling avoids that entirely.
 
-## 6. How it works
+## 6. File filtering (movies excluded, 20MB cap)
+
+To keep this as a small-file document/photo/audio indexer only:
+
+- Any post typed as `video` or `video_note` by Telegram is **never** indexed,
+  regardless of size.
+- Any file (including documents) larger than `MAX_FILE_SIZE_MB` (default 20)
+  is skipped. If Telegram doesn't report a size for a file, it's skipped too
+  (better to skip than index something unverified).
+- Skipped posts are logged (`Skipped ...`) but otherwise ignored — nothing
+  is sent back to the channel.
+- This is filtering on Telegram's own type/size metadata, not on filename —
+  someone could still rename a movie file so it looks like a document and
+  post it under 20MB. This isn't a content-moderation system; if you need to
+  guarantee no copyrighted media gets shared, that requires human review of
+  what's posted to the source channel.
+
+## 7. How it works
 
 - `index_channel_post` — fires on every post in a channel the bot admins.
   Detects file type (document/video/audio/voice/video_note/photo), pulls
