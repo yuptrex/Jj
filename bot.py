@@ -14,6 +14,7 @@ Run modes:
 
 import logging
 import os
+import random
 from datetime import datetime, timezone
 
 from dotenv import load_dotenv
@@ -32,6 +33,21 @@ from telegram.ext import (
 )
 
 load_dotenv()
+
+# The full set of standard (non-custom) emoji Telegram allows for message
+# reactions via the Bot API's ReactionTypeEmoji. Bots can only use one of
+# these fixed emoji per reaction (custom emoji reactions require the emoji
+# to already be present on the message, or explicit admin permission).
+ALL_REACTION_EMOJIS = [
+    "👍", "👎", "❤️", "🔥", "🥰", "👏", "😁", "🤔", "🤯", "😱",
+    "🤬", "😢", "🎉", "🤩", "🤮", "💩", "🙏", "👌", "🕊️", "🤡",
+    "🥱", "🥴", "😍", "🐳", "❤️‍🔥", "🌚", "🌭", "💯", "🤣", "⚡",
+    "🍌", "🏆", "💔", "🤨", "😐", "🍓", "🍾", "💋", "🖕", "😈",
+    "😴", "😭", "🤓", "👻", "👨‍💻", "👀", "🎃", "🙈", "😇", "😨",
+    "🤝", "✍️", "🤗", "🫡", "🎅", "🎄", "☃️", "💅", "🤪", "🗿",
+    "🆒", "💘", "🙉", "🦄", "😘", "💊", "🙊", "😎", "👾", "🤷‍♂️",
+    "🤷", "🤷‍♀️", "😡",
+]
 
 # ---------------------------------------------------------------------------
 # Config
@@ -105,6 +121,21 @@ def search_files(query: str, limit: int = 10):
         ]
     }
     return list(files_col.find(regex_filter).sort("saved_at", -1).limit(limit))
+
+
+# ---------------------------------------------------------------------------
+# Reactions - big animated emoji burst on every user-originated message
+# ---------------------------------------------------------------------------
+async def react_random(message):
+    """Set a random big animated-burst reaction on a user's message.
+    is_big=True is what triggers Telegram's fullscreen burst animation on
+    the sender's screen (same as a long-press reaction in the app). The Bot
+    API only lets us pick the emoji; the animation itself is client-side."""
+    try:
+        emoji = random.choice(ALL_REACTION_EMOJIS)
+        await message.set_reaction(reaction=emoji, is_big=True)
+    except Exception:
+        logger.exception("Failed to set reaction on message %s", getattr(message, "message_id", "?"))
 
 
 # ---------------------------------------------------------------------------
@@ -191,6 +222,7 @@ async def index_channel_post(update: Update, context: ContextTypes.DEFAULT_TYPE)
 # Handlers: user search in DM
 # ---------------------------------------------------------------------------
 async def start_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await react_random(update.message)
     await update.message.reply_text(
         "Send me part of a file name and I'll search the channel's indexed files "
         "and send back any matches."
@@ -200,6 +232,7 @@ async def start_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def stats_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not is_authorized(update):
         return
+    await react_random(update.message)
     count = files_col.count_documents({})
     await update.message.reply_text(f"Indexed files: {count}")
 
@@ -208,6 +241,8 @@ async def handle_search_text(update: Update, context: ContextTypes.DEFAULT_TYPE)
     if not is_authorized(update):
         await update.message.reply_text("You're not authorized to use this bot.")
         return
+
+    await react_random(update.message)
 
     query = update.message.text
     results = search_files(query)
