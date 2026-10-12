@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<title>CSuperKnights (CSK) — Multiplayer Arena Shooter</title>
+<meta name="description" content="CSuperKnights (CSK, also CsKnights): fast top-down arena shooter. Play solo against bots or host a room. First to 15 kills wins.">
+<meta name="theme-color" content="#0d1217"><meta name="color-scheme" content="dark">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 48 48'%3E%3Crect width='48' height='48' rx='10' fill='%230d1217'/%3E%3Cpath d='M24 6 41 15v18L24 42 7 33V15z' fill='none' stroke='%23ffb02e' stroke-width='3'/%3E%3Cpath d='M15 29 24 13l9 16h-5l-4-7-4 7z' fill='%23ffb02e'/%3E%3C/svg%3E">
+
+<!-- Fonts: display face for headings/buttons, body face for text -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+
+<!-- Game core styles (unmodified logic/layout rules extracted from the original single file) -->
+<link rel="stylesheet" href="game-core.css">
+<link rel="stylesheet" href="home-base.css">
+
+<!-- Phase 1 visual re-skin (new; loads last so it wins on cascade without touching markup/ids) -->
+<link rel="stylesheet" href="theme-vars.css">
+<link rel="stylesheet" href="theme-home.css">
+<link rel="stylesheet" href="theme-hud.css">
+<link rel="stylesheet" href="home-image.css">
+<link rel="stylesheet" href="theme-lobby.css">
+<link rel="preload" as="image" href="loading-bg.jpg" fetchpriority="high">
+<link rel="preload" as="image" href="home-bg.jpg">
+<link rel="prefetch" as="image" href="lobby-bg.jpg">
+</head><body>
+<!-- Loading splash: covers first paint while fonts/Firebase/game script initialize.
+     Pure presentation — does not touch any game state or element the game script uses. -->
+<div id="csk-splash" aria-hidden="true">
+  <img class="sp-bg" src="loading-bg.jpg" alt="" draggable="false" decoding="sync" fetchpriority="high">
+  <div class="sp-ui">
+    <div class="sp-track"><div class="sp-fill" id="sp-fill"></div><div class="sp-pct" id="sp-pct">0%</div></div>
+    <div class="sp-tip" id="sp-tip"></div>
+  </div>
+</div>
+<!-- Same loading art, reused for every screen switch (home -> waiting room -> match, leaving, kicked, solo) -->
+<div id="csk-load" hidden aria-hidden="true">
+  <img class="sp-bg" src="loading-bg.jpg" alt="" draggable="false" decoding="sync">
+  <div class="sp-ui">
+    <div class="sp-track"><div class="sp-fill" id="ld-fill"></div><div class="sp-pct" id="ld-pct">0%</div></div>
+    <div class="sp-tip" id="ld-tip"></div>
+  </div>
+</div>
+<script src="loading.js"></script>
+<script>
+/* Loading screen progress: real checkpoints are reported by __cskProg(n) between the big script loads below;
+   in between, the bar creeps forward so it never looks frozen. It reaches 100% on window "load", then fades out.
+   It can never block play: a hard safety timeout closes it even if "load" never fires. */
+(function(){
+  var t0=Date.now(),MIN_MS=900,target=0,shown=0,closing=0,fill=document.getElementById('sp-fill'),pct=document.getElementById('sp-pct'),el=document.getElementById('csk-splash');
+  function paint(){var p=Math.round(shown);fill.style.width=shown+'%';pct.textContent=p+'%'}
+  window.__cskProg=function(n){if(n>target)target=Math.min(n,99)};
+  var iv=setInterval(function(){
+    var age=Date.now()-t0;
+    if(!closing){var creep=Math.min(88,age/45);if(creep>target)target=Math.max(target,Math.min(creep,target+.6))}
+    var goal=closing?100:target;
+    shown+=(goal-shown)*.14+(goal>shown?.12:0);if(shown>goal)shown=goal;
+    paint();
+    if(closing&&shown>=99.6&&age>=MIN_MS){clearInterval(iv);shown=100;paint();setTimeout(function(){el.classList.add('csk-hide');if(stopTips)setTimeout(stopTips,600)},260)}
+  },33);
+  var stopTips=window.CSKTips?CSKTips.attach(document.getElementById('sp-tip')):null;
+  function finish(){closing=1}
+  if(document.readyState==='complete')finish();else window.addEventListener('load',finish);
+  setTimeout(finish,7000);  /* safety net */
+})();
+</script>
+<canvas id="c"></canvas><div id="kf"></div><div id="sb" hidden></div><div id="bc"></div><div id="msg"></div><div id="rc" hidden title="Tap to copy"></div><button id="home" hidden>BACK TO HOME</button><div id="rot"><div class="ph"></div>Rotate your phone to landscape to play</div>
+<button id="pz" hidden aria-label="Pause">❚❚</button>
+<div id="pm" hidden><div class="box"><h1>PAUSED</h1><div class="tag" id="pn"></div><button id="pr">RESUME</button><button class="s" id="pl">BUTTON LAYOUT</button><button class="s" id="ph">EXIT TO HOME</button></div></div>
+<div id="ed" hidden><canvas id="ec"></canvas><div id="ep"><b>BUTTON LAYOUT</b><span id="en"></span><label>Size <input type="range" id="esz" min="50" max="180" value="100"></label><label>Opacity <input type="range" id="eop" min="25" max="100" value="100"></label><button class="s" id="ers">RESET</button><button id="eok">SAVE &amp; CLOSE</button></div></div>
+<div id="menu"><div class="hs">
+<img class="hs-bg" src="home-bg.jpg" alt="CSuperKnights - Clash of Super Kings" draggable="false" decoding="sync" fetchpriority="high">
+<div class="hs-ui">
+ <button class="hs-btn hs-lit " id="stb" type="button" aria-label="Settings" style="--x:21;--y:13;--w:258;--h:87;--clip:polygon(5.814% 49.4253%,12.0155% 19.5402%,30.6202% 16.092%,93.4109% 16.092%,99.2248% 48.2759%,93.4109% 80.4598%,30.6202% 80.4598%,12.0155% 77.0115%)"><i class="face"></i><i class="fx"></i><span class="sr-only">Settings</span></button>
+ <button class="hs-fs" id="fsb" type="button" aria-label="Enter full screen" aria-pressed="false" title="Full screen" style="--rx:1612;--cy:55;--w:94;--h:90">
+  <svg class="fs-ic fs-ex" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9.5V4h5.5M14.5 4H20v5.5M20 14.5V20h-5.5M9.5 20H4v-5.5"/></svg>
+  <svg class="fs-ic fs-co" viewBox="0 0 24 24" aria-hidden="true"><path d="M9.5 4v5.5H4M20 9.5h-5.5V4M14.5 20v-5.5H20M4 14.5h5.5V20"/></svg>
+</button>
+ 
+ <div id="acc" data-s="guest" data-nudge="0">
+  <input id="nm" class="hs-name" maxlength="12" placeholder="Name" autocomplete="off" spellcheck="false" aria-label="Callsign" style="--x:1722;--y:31;--w:172;--h:48">
+  <button class="hs-btn hs-dim " id="acbtn" type="button" aria-label="Sign in with Google" style="--x:724;--y:401;--w:503;--h:66;--clip:polygon(4.7714% 10.6061%,95.4274% 10.6061%,97.4155% 25.7576%,97.4155% 77.2727%,95.4274% 90.9091%,4.7714% 90.9091%,2.7833% 77.2727%,2.7833% 25.7576%)"><i class="face"></i><i class="fx"></i><span class="hs-so" style="left:30.6163%;top:30.303%;width:50.0994%;height:43.9394%"><span id="acbl">SIGN IN WITH GOOGLE</span></span></button>
+ </div>
+ <button class="hs-btn hs-dim " id="solo" type="button" aria-label="Play solo" style="--x:716;--y:479;--w:519;--h:76;--clip:polygon(5.395% 6.5789%,93.6416% 6.5789%,97.8805% 47.3684%,93.6416% 89.4737%,5.395% 89.4737%,1.1561% 47.3684%)"><i class="face"></i><i class="fx"></i><span class="sr-only">Play solo</span></button>
+ <label class="hs-hit" for="rm" style="--x:679;--y:569;--w:367;--h:71"></label>
+ <input id="rm" class="hs-room" maxlength="5" placeholder="Enter room code..." autocomplete="off" autocapitalize="characters" spellcheck="false" aria-label="Room code" style="--x:758;--y:586;--w:272;--h:40">
+ <button class="hs-btn hs-lit " id="join" type="button" aria-label="Join room" style="--x:1049;--y:566;--w:203;--h:73;--clip:polygon(8.3744% 15.0685%,92.1182% 15.0685%,95.0739% 24.6575%,95.0739% 82.1918%,91.133% 90.411%,8.3744% 90.411%,4.4335% 82.1918%,4.4335% 24.6575%)"><i class="face"></i><i class="fx"></i><span class="sr-only">Join room</span></button>
+ <button class="hs-btn hs-lit " id="host" type="button" aria-label="Create room" style="--x:752;--y:654;--w:434;--h:72;--clip:polygon(6.9124% 11.1111%,93.0876% 11.1111%,96.7742% 50%,93.0876% 90.2778%,6.9124% 90.2778%,3.2258% 50%)"><i class="face"></i><i class="fx"></i><span class="sr-only">Create room</span></button>
+ <button class="hs-cs" id="cs" type="button" data-s="wait" style="--x:640;--y:742;--w:703;--h:42"><i></i><span>Connecting…</span></button>
+</div>
+<div hidden><div class="h-av" id="acav">G</div><b id="acn">Guest</b><small id="acs"></small><button id="l1" class="on" type="button">ARENA</button><button id="l2" type="button">FORTRESS</button><button class="h-ico" id="set" type="button">BUTTON LAYOUT</button><button class="h-ico" id="mt" type="button">SOUND: ON</button><button class="h-ico" id="fs" type="button">FULLSCREEN</button><div id="hk"></div><div id="tip"></div></div>
+</div></div>
+
+<!-- Room waiting lobby: shown after Create Room / Join Room, before the match actually starts.
+     Pure additive overlay — does not touch any id/class the core game script reads. The match
+     itself is still started by calling the original start(mode, room) once the host hits GO. -->
+<div id="lob" hidden role="dialog" aria-modal="true" aria-label="Waiting room">
+  <div class="lob-stage">
+    <img class="lob-bg" src="lobby-bg.jpg" alt="Waiting room" draggable="false" decoding="sync">
+    <div class="lob-fx" id="lob-fx" aria-hidden="true"></div>
+    <div class="lob-ui">
+      <div class="lob-abs lob-pop" id="lob-pop" hidden role="dialog" aria-label="Player options"><b id="lob-pop-n"></b><button id="lob-pop-kick" type="button">KICK OUT</button></div>
+      <div class="lob-abs lob-sub" style="--x:700;--y:98;--w:583;--h:30">
+        <button class="lob-code" id="lob-code" type="button" title="Tap to copy">ROOM <b></b></button>
+        <i class="d">&#9670;</i><span id="lob-cnt">0 / 8 PLAYERS</span>
+        <i class="d">&#9670;</i><span id="lob-hint"></span>
+      </div>
+      <button class="lob-abs lob-btn lob-leave" id="lob-leave" type="button" aria-label="Exit room" style="--x:1767;--y:22;--w:187;--h:64"><i class="face"></i></button>
+      <div class="lob-seats" id="lob-seats"></div>
+      <button class="lob-abs lob-btn lob-go" id="lob-ready" type="button" style="--x:788;--y:672;--w:404;--h:80"><i class="face"></i><span class="lab">READY UP</span></button>
+      <button class="lob-abs lob-btn lob-go" id="lob-start" type="button" hidden disabled style="--x:788;--y:672;--w:404;--h:80"><i class="face"></i><span class="lab"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 3l7.5 7.5-1.6 1.6L3 6.2zM21 3v3.2l-5.9 5.9-1.6-1.6zM12.6 12.4l1.6 1.6-2 2 1.6 1.6-1.4 1.4-1.6-1.6-2.3 2.3-1.2-1.2 2.3-2.3-1.6-1.6 1.4-1.4 1.6 1.6zM15 13l4.5 4.5-1.2 1.2-2.3-2.3-1.6 1.6-1.4-1.4 1.6-1.6L12.8 13.9z"/></svg>START</span></button>
+    </div>
+  </div>
+  <div class="lob-count" id="lob-count" hidden>
+    <div class="lob-count-n" id="lob-count-n">15</div>
+    <div class="lob-count-l">MATCH STARTING…</div>
+    <div class="lob-count-fs" id="lob-count-fs" hidden>Tap anywhere for full screen</div>
+  </div>
+</div>
+
+<div id="st" hidden role="dialog" aria-label="Settings"><div class="st-top"><div><h2>SETTINGS</h2><span>Changes save automatically · v4.1</span></div><button class="st-done" id="stx" type="button">DONE</button></div><div class="st-grid"><section class="st-card st-wide st-prof"><h3>Profile</h3><div class="h-st"><div><b id="s1">0</b><span>KILLS</span></div><div><b id="s2">0.0</b><span>K/D</span></div><div><b id="s3">0</b><span>WINS</span></div><div><b id="s4">0</b><span>STREAK</span></div></div><div class="accb" id="accb" hidden><div class="accb-h"><b>GUN ACCURACY</b><span id="accT">–</span><em id="accC"></em></div><div id="accR"></div></div></section><section class="st-card"><h3>Audio</h3><div class="sr"><div class="sl"><b>Master volume</b><small>Loudness of all game sound</small></div><div class="vol"><input type="range" id="vol" min="0" max="100"><span id="vv"></span></div></div><div class="sr"><div class="sl"><b>Sound effects</b><small>Guns, hits and menu clicks</small></div><button class="sk" id="o-mute" role="switch" type="button"><i></i></button></div><div class="sr"><div class="sl"><b>Battle drums</b><small>War drums during intense fights</small></div><button class="sk" data-o="dr" role="switch" type="button"><i></i></button></div></section><section class="st-card"><h3>Display</h3><div class="sr"><div class="sl"><b>Damage numbers</b><small>Floating hit values</small></div><button class="sk tg" data-k="dn" role="switch" type="button"><i></i></button></div><div class="sr"><div class="sl"><b>FPS counter</b><small>Frame rate readout</small></div><button class="sk tg" data-k="fps" role="switch" type="button"><i></i></button></div><div class="sr"><div class="sl"><b>Fullscreen</b><small>Hide browser bars</small></div><button class="act" id="o-fs" type="button">TOGGLE</button></div></section><section class="st-card"><h3>Effects</h3><div class="sr"><div class="sl"><b>Graphics quality</b><small>Arena detail &amp; glow · lower this for more FPS on older devices</small></div><div class="seg" data-seg="gfx"><button type="button" data-i="0">LOW</button><button type="button" data-i="1">MED</button><button type="button" data-i="2">HIGH</button></div></div><div class="sr"><div class="sl"><b>Screen shake</b><small>Camera kick on shots and hits</small></div><div class="seg" data-seg="shk"><button type="button" data-i="0">OFF</button><button type="button" data-i="1">LOW</button><button type="button" data-i="2">FULL</button></div></div><div class="sr"><div class="sl"><b>Particles</b><small>Sparks and explosion detail</small></div><div class="seg" data-seg="fx"><button type="button" data-i="0">LOW</button><button type="button" data-i="1">MED</button><button type="button" data-i="2">HIGH</button></div></div><div class="sr"><div class="sl"><b>Damage flash</b><small>Red edge when you are hit</small></div><button class="sk" data-o="hf" role="switch" type="button"><i></i></button></div><div class="sr"><div class="sl"><b>Kill feed</b><small>Who eliminated who</small></div><button class="sk" data-o="kf" role="switch" type="button"><i></i></button></div></section><section class="st-card"><h3>Interface</h3><div class="sr"><div class="sl"><b>Menu animations</b><small>Moving background and shine</small></div><button class="sk" data-o="an" role="switch" type="button"><i></i></button></div><div class="sr"><div class="sl"><b>Home tips</b><small>Hints on the home screen</small></div><button class="sk" data-o="tp" role="switch" type="button"><i></i></button></div><div class="sr"><div class="sl"><b>Touch buttons</b><small>Move and resize on-screen controls</small></div><button class="act" id="o-ed" type="button">EDIT LAYOUT</button></div><div class="sr"><div class="sl"><b>Reset settings</b><small>Back to defaults</small></div><button class="act" id="o-rs" type="button">RESET</button></div><div class="sr"><div class="sl"><b>Reset career stats</b><small>Kills, wins and streak</small></div><button class="act" id="o-rt" type="button">RESET</button></div></section><section class="st-card st-wide"><h3>Controls</h3><div class="sr kb-top"><div class="sl"><b>Keyboard bindings</b><small>Click a key box, then press the new key · Backspace clears it · Esc cancels · saved automatically</small></div><button class="act" id="kb-rs" type="button">RESET CONTROLS</button></div><div class="kg" id="kg"></div></section></div></div><div id="swp" class="off"></div><div id="swb" class="off" role="button" aria-label="Swap weapon"></div><div id="eqp"></div><div id="crb" class="off" role="button" aria-label="Open crate"></div><div id="crp" class="off"></div><div id="fps"></div><div id="err" role="alert"></div>
+
+<!-- Sound bank (large, kept as its own file to keep index.html light) -->
+<script src="sfx-data.js"></script>
+<script>window.__cskProg&&__cskProg(45)</script>
+<!-- Firebase (multiplayer backend) -->
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script>window.__cskProg&&__cskProg(58)</script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+<script>window.__cskProg&&__cskProg(68)</script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script>window.__cskProg&&__cskProg(78)</script>
+<!-- Game logic (unmodified, concatenated from the original inline scripts in original order) -->
+<script src="home-fx.js"></script>
+<script src="fullscreen.js"></script>
+<script src="battle-fx.js"></script><script src="battle-fx-char.js"></script>
+<link rel="stylesheet" href="victory.css"><script src="victory.js"></script><script src="game.js"></script>
+<script>/* wss:// address of your relay server (see RELAY-DEPLOY.md). Leave empty to use P2P + Firebase only. Can also be set per visit with ?relay=wss://... */
+window.CSK_RELAY_URL="";</script>
+<script src="rtc.js"></script>
+<script>window.__cskProg&&__cskProg(92)</script>
+<!-- Room waiting lobby: additive layer, loads after game.js so it can call the game's own start() -->
+<script src="lobby-fx.js"></script>
+<script src="lobby.js"></script>
+<script>window.__cskProg&&__cskProg(97)</script>
+</body></html>
