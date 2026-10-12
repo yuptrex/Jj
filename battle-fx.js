@@ -10,10 +10,11 @@ const TAU=6.2832;
 const clamp=(v,a,b)=>v<a?a:v>b?b:v;
 function R32(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
 function mk(w,h){const c=document.createElement('canvas');c.width=w;c.height=h;return c}
-/* Graphics quality tier, chosen in Settings: 0 = Low, 1 = Medium, 2 = High (default, original look). */
+/* Graphics quality tier, chosen in Settings: 0 = Low, 1 = Medium, 2 = High (default), 3 = Ultra HD (massive FX, dense ambience, extra map-asset detail). */
 const gfx=()=>window.GFXQ==null?2:window.GFXQ;
 const GLOW=()=>gfx()>=1;   // skip the small decorative glow sprites (crystals/bush/pond/sigils) below Medium
 const CLOUDS=()=>gfx()>=2; // drifting cloud shadows are a High-only flourish
+const ULTRA=()=>gfx()>=3&&!LITE;
 const Q=()=>!!(window.PFQ&&window.PFQ.lq)||LITE||gfx()===0;   // low-quality flag used by the game's own perf code
 const LQ=()=>LITE||!GLOW();   // drop the small decorative glow sprites: auto "lite" mode, or Graphics Quality below Medium
 
@@ -134,6 +135,7 @@ function floor(now,dt,hw,hh){
   cx.restore()}
  // decor
  decor(now,P,hw,hh,vis);
+ if(ULTRA())try{ultraMap(now,P,vis)}catch(e){}
  // scorch marks / decals
  for(let i=decals.length-1;i>=0;i--){const d=decals[i];d.l-=dt;if(d.l<=0){decals.splice(i,1);continue}
   if(!vis(d.x,d.y,d.r))continue;const k=Math.min(1,d.l/d.m*1.6),hot=Math.max(0,d.l-(d.m-.9))/.9;
@@ -142,12 +144,27 @@ function floor(now,dt,hw,hh){
  cx.globalAlpha=1;
  // drifting cloud shadows
  const rr=R32(LV*77+5);cx.fillStyle='#000';
- for(let i=0;i<(LITE||!CLOUDS()?0:3);i++){const bx=rr()*MW,by=rr()*MH,sp=14+rr()*20,rad=330+rr()*220,x=((bx+now/1000*sp)%(MW+1400))-700,y=by+Math.sin(now/9000+i)*60;
+ for(let i=0;i<(LITE||!CLOUDS()?0:ULTRA()?7:3);i++){const bx=rr()*MW,by=rr()*MH,sp=14+rr()*20,rad=330+rr()*220,x=((bx+now/1000*sp)%(MW+1400))-700,y=by+Math.sin(now/9000+i)*60;
   if(!vis(x,y,rad))continue;cx.globalAlpha=P.cloud;cx.drawImage(glowSpr('#000'),x-rad,y-rad*.7,rad*2,rad*1.4)}
  cx.globalAlpha=1;
  barrier(now,P);
  return 1}
 
+/* ULTRA HD map layer: god-rays, pulsing zone light pools, extra rune rings, orbiting motes, ambient occlusion + rim light on every map asset */
+function ultraMap(now,P,vis){
+ cx.save();cx.globalCompositeOperation='lighter';
+ ZN.forEach((z,i)=>{if(!vis(z[1],z[2],900))return;const col=P.zones[i%5],t=now/1000;
+  cx.globalAlpha=.10+.05*pulse(now,2400,i);const R=520+40*Math.sin(t+i);cx.drawImage(glowSpr(col),z[1]-R,z[2]-R,R*2,R*2);
+  for(let k=0;k<5;k++){const a=t*.08*(i%2?-1:1)+k*TAU/5,L=700;cx.globalAlpha=.05+.03*pulse(now,3000,k+i);cx.fillStyle=col;
+   cx.save();cx.translate(z[1],z[2]);cx.rotate(a);cx.beginPath();cx.moveTo(0,-14);cx.lineTo(L,-70);cx.lineTo(L,70);cx.lineTo(0,14);cx.fill();cx.restore()}
+  cx.strokeStyle=col;cx.lineWidth=2;cx.globalAlpha=.2;cx.setLineDash([8,14]);cx.lineDashOffset=now/40;cx.beginPath();cx.arc(z[1],z[2],175,0,TAU);cx.stroke();cx.setLineDash([]);
+  for(let k=0;k<14;k++){const a=t*(.5+k%3*.2)*(k%2?-1:1)+k*.45,r=60+k*11;cx.globalAlpha=.55*pulse(now,700,k);cx.drawImage(glowSpr('#fff',32),z[1]+Math.cos(a)*r-5,z[2]+Math.sin(a)*r*.8-5,10,10)}});
+ cx.restore();
+ cx.save();
+ for(const d of DEC){if(d.k==0||!vis(d.x,d.y,60))continue;const r=26*d.s;
+  cx.globalAlpha=.32;cx.drawImage(glowSpr('#000'),d.x-r*1.1,d.y-r*.5,r*2.4,r*1.5);
+  cx.globalCompositeOperation='lighter';cx.globalAlpha=.16+.06*pulse(now,1800,d.x*.01);cx.drawImage(glowSpr(P.trim,64),d.x-r,d.y-r,r*2,r*2);cx.globalCompositeOperation='source-over'}
+ cx.restore()}
 function rune(x,y,r,col,now,i){
  cx.strokeStyle=col;cx.lineWidth=3;
  cx.globalAlpha=.22+.12*pulse(now,1600,i);cx.setLineDash([26,18]);cx.lineDashOffset=-now/60*(i%2?-1:1);cx.beginPath();cx.arc(x,y,r,0,TAU);cx.stroke();
@@ -315,7 +332,7 @@ function tag(p,v,now,dt){
 
 /* --------------------------------------------------- particles & effects */
 function partsDraw(list,dt){
- const cap=LITE?220:[220,320,450][gfx()];if(list.length>cap)list.splice(0,list.length-cap);
+ const cap=LITE?220:[220,320,450,900][gfx()];if(list.length>cap)list.splice(0,list.length-cap);
  const fd=Math.pow(.93,dt*60);
  for(const q of list){
   q.l-=dt;q.x+=q.vx*dt;q.y+=q.vy*dt;q.vx*=fd;q.vy*=fd;
@@ -344,7 +361,7 @@ function textsDraw(list,dt){
 
 /* ambient motes: fireflies in the courtyard, rising embers in the wastes */
 function ambient(now,dt,hw,hh){
- const P=pal(),n=Q()?Math.floor(P.flyN/2):P.flyN;
+ const P=pal(),n=Q()?Math.floor(P.flyN/2):P.flyN*(ULTRA()?3:1);
  while(amb.length<n)amb.push({x:cam.x+(Math.random()-.5)*hw*2.4,y:cam.y+(Math.random()-.5)*hh*2.4,ph:Math.random()*9,sp:.5+Math.random(),z:.5+Math.random()});
  amb.length=n;
  cx.save();cx.globalCompositeOperation='lighter';
@@ -361,6 +378,7 @@ function flashesDraw(dt){
  cx.restore()}
 
 /* screen-space finish: vignette, player spotlight, low-health pulse */
+let bloomC=null;
 function post(now,dt,m,hw,hh){
  if(dt>0){emaDt+=(Math.min(dt,.1)-emaDt)*.05;if(emaDt>1/38&&!window.BFX_NOLITE){slowT+=dt;if(slowT>2.5)LITE=1}else slowT=Math.max(0,slowT-dt)}
  try{flashesDraw(dt);if(!LITE&&gfx()>0)ambient(now,dt,hw,hh)}catch(e){}
@@ -369,6 +387,7 @@ function post(now,dt,m,hw,hh){
   const w=Math.max(8,W>>2),h=Math.max(8,H>>2);vigC=mk(w,h);const g=vigC.getContext('2d'),rg=g.createRadialGradient(w/2,h/2,Math.min(w,h)*.30,w/2,h/2,Math.hypot(w,h)*.55);
   const c=P.vig;rg.addColorStop(0,`rgba(${c},0)`);rg.addColorStop(.6,`rgba(${c},.20)`);rg.addColorStop(1,`rgba(${c},.78)`);g.fillStyle=rg;g.fillRect(0,0,w,h);vigKey=key}
  cx.save();cx.setTransform(1,0,0,1,0,0);
+ if(ULTRA()){try{if(!bloomC||bloomC.width!==(W>>2)){bloomC=mk(W>>2,H>>2)}const bg=bloomC.getContext('2d');bg.globalCompositeOperation='copy';bg.filter='brightness(1.15) blur(3px)';bg.drawImage(cv,0,0,bloomC.width,bloomC.height);bg.filter='none';cx.globalCompositeOperation='lighter';cx.globalAlpha=.32;cx.drawImage(bloomC,0,0,W,H);cx.globalCompositeOperation='source-over'}catch(e){}}
  cx.globalAlpha=1;cx.drawImage(vigC,0,0,W,H);
  if(m&&m.al&&m.hp<40){const k=(40-m.hp)/40,pl=.5+.5*Math.sin(now/(150+m.hp*6));const g=cx.createRadialGradient(W/2,H/2,Math.min(W,H)*.32,W/2,H/2,Math.hypot(W,H)*.6);g.addColorStop(0,'rgba(255,30,20,0)');g.addColorStop(1,`rgba(255,30,20,${(.20+.34*pl)*k})`);cx.fillStyle=g;cx.fillRect(0,0,W,H)}
  if(hurtT>0){hurtT=Math.max(0,hurtT-dt*2.4);const g=cx.createRadialGradient(W/2,H/2,Math.min(W,H)*.38,W/2,H/2,Math.hypot(W,H)*.6);g.addColorStop(0,'rgba(255,40,30,0)');g.addColorStop(1,`rgba(255,40,30,${.22*hurtT})`);cx.fillStyle=g;cx.fillRect(0,0,W,H)}

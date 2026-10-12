@@ -426,28 +426,3 @@ The arena (floor, walls, pickups, bullets, particles, lighting) was dull; it is 
 - Tested in headless Chromium (software rendering, so absolute fps is not representative) at 1280x720 and 844x390, both levels, with no console errors. **Please test on a real phone.**
 
 **game.js edits (all small):** hook call in `onEv`; `burst()` particles flagged as glow; render() wrapped so BFX draws floor/walls/pads/coins/bullets/players/rings/particles/texts/post-fx with the old code kept as fallback; `SZ` zoom-punch in the world transform; `BFX.reset()` in `start()`.
-
----
-
-## Phase 3 — High-fidelity knight renderer (additive, this update)
-
-Added `battle-fx-char.js`, a new draw-only module loaded right after
-`battle-fx.js`. It supplies `BFX.char(p, v, now)`: a richer replacement
-for the original `drawChar()` — layered gradient-shaded armor plates,
-rim lighting, a two-layer cloth cape, glowing animated visor with a
-scanline, soft double-layer contact shadow, shoulder-pad rank glow tied
-to weapon upgrade tier, and a warmer muzzle-flash gradient — all reading
-the exact same `p`/`v` fields the original already used (no gameplay or
-network state touched, hitbox radius `R` unchanged).
-
-`render()` in `game.js` now calls `BFX.char(p,v,now)` only when the
-battlefield FX layer is active, wrapped in the same try/catch-and-fall-
-back-to-the-original-drawChar pattern every other `BFX.*` call already
-uses, so a failure here can't break a match. Respects the existing
-Graphics Quality setting (`window.GFXQ`: Low/Medium/High) via the same
-`gfx()` helper battle-fx.js uses — High shows the extra plating/cape
-highlight layer, Medium/Low keep the simpler strokes for performance.
-
-Nothing in `game.js` gameplay logic, physics, bot AI, or networking was
-changed beyond the single `drawChar(...)` call site, which now branches
-to the new renderer and falls back on error.

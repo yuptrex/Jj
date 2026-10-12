@@ -278,7 +278,7 @@ Object.defineProperty(cx,'shadowColor',{configurable:true,get(){return _sc.get.c
 let upq=0,upOpen=false,cc=0,dpr=1,S=1,UIS=1,sim=null,net=null,myId='p'+Math.random().toString(36).slice(2,8),myName='Player',myHue=Math.random()*360|0;
 let snap={p:[],b:[],k:[],w:null},snapAt=0,netEv=[],views={},parts=[],rings=[],texts=[],shake=0,flash=0,hitm=0,mute=false,t0=0;
 const cam={x:MW/2,y:MH/2},keys={},M={x:0,y:0,down:false},ST={mv:null,aim:null,fire:null,dash:0,rel:0};
-let paused=false,lockId='',selLv=1,beams=[],conf=[],hpS=100,healAt=-1e9,liveAt=-1e9,deadSince=0,wasAlive=null,winT=0,confDone=0,specId=null;
+let paused=false,lockId='',selLv=1,beams=[],conf=[],hpS=100,healAt=-1e9,liveAt=-1e9,deadSince=0,wasAlive=null,winT=0,confDone=0,specId=null,vsLoadShown=0;
 let rScale=1;
 function rs(){dpr=Math.max(.5,Math.min(devicePixelRatio||1,2)*rScale);cv.width=Math.max(1,Math.round(innerWidth*dpr));cv.height=Math.max(1,Math.round(innerHeight*dpr));cv.style.width=innerWidth+'px';cv.style.height=innerHeight+'px';S=Math.min(innerWidth/1000,innerHeight/620);UIS=Math.max(.64,Math.min(1,Math.min(innerWidth/980,innerHeight/560)));try{document.documentElement.style.setProperty("--uis",UIS.toFixed(3));if(typeof uisApply=="function")uisApply()}catch(e){}}
 addEventListener('resize',rs);rs();
@@ -857,7 +857,7 @@ function render(dt,now){if(snap.lv&&snap.lv!=LV)setLevel(snap.lv);if(!sim&&net)n
   for(const t of v.tr){cx.globalAlpha=t.l*1.5;cx.fillStyle=`hsl(${p.hue} 90% 62%)`;cx.beginPath();cx.arc(t.x,t.y,R,0,6.28);cx.fill()}
   cx.globalAlpha=p.inv>0&&((now/90)|0)%2?.45:1;
   let bs=1;if(v.born>0){const k=1-v.born/.5;bs=Math.max(.05,1+2.70158*Math.pow(k-1,3)+1.70158*Math.pow(k-1,2));cx.save();cx.translate(v.x,v.y);cx.scale(bs,bs);cx.translate(-v.x,-v.y)}
-  if(bf&&window.BFX&&BFX.char){try{BFX.char(p,v,now)}catch(x){if(!window.__bfE4){window.__bfE4=1;console.error('BFX char',x)}drawChar(p,v,now)}}else drawChar(p,v,now);if(bs!=1)cx.restore();cx.globalAlpha=1;
+  drawChar(p,v,now);if(bs!=1)cx.restore();cx.globalAlpha=1;
   if(v.heal>0){cx.strokeStyle=`rgba(125,255,166,${v.heal})`;cx.lineWidth=4;cx.beginPath();cx.arc(v.x,v.y,R+8+(1-v.heal)*34,0,6.28);cx.stroke();cx.fillStyle=`rgba(95,211,122,${v.heal*.28})`;cx.beginPath();cx.arc(v.x,v.y,R+6,0,6.28);cx.fill()}
   if(m&&!m.al&&!snap.w&&p.id==m.kb){cx.strokeStyle='#ff4a3a';cx.lineWidth=3;cx.setLineDash([8,6]);cx.lineDashOffset=-now/40;cx.beginPath();cx.arc(v.x,v.y,R+16+Math.sin(now/120)*3,0,6.28);cx.stroke();cx.setLineDash([]);}
   if(p.rel>0){cx.strokeStyle='#fff';cx.lineWidth=3;cx.beginPath();cx.arc(v.x,v.y,R+13,-1.57,-1.57+6.28*(1-p.rel/WP[p.w].rel));cx.stroke()}
@@ -1289,7 +1289,7 @@ function hudFx(m,now,W,H,F,dt){
  if(m&&m.al&&lt>=0&&lt<.9){const k=lt/.9;cx.fillStyle=`rgba(255,255,255,${.55*(1-k)*(1-k)})`;cx.fillRect(0,0,W,H);cx.strokeStyle=`hsla(${m.hue},95%,70%,${1-k})`;cx.lineWidth=8*(1-k)+1;cx.beginPath();cx.arc(W/2,H/2,Math.max(1,k*Math.max(W,H)*.6),0,6.28);cx.stroke()}
  if(m&&m.al&&m.inv>0&&!snap.w){const g=cx.createRadialGradient(W/2,H/2,H*.35,W/2,H/2,H*.85);g.addColorStop(0,`hsla(${m.hue},95%,65%,0)`);g.addColorStop(1,`hsla(${m.hue},95%,65%,${.28*Math.min(1,m.inv/.5)})`);cx.fillStyle=g;cx.fillRect(0,0,W,H)}
  if(m&&!m.al&&!snap.w)deathUI(m,now,W,H,F);
- if(m&&snap.w&&snap.w.id==myId&&window.VS){VS.show(snap,myId);$('home').hidden=true}else{window.VS&&VS.hide();if(m&&snap.w)roundFx((now-winT)/1000,snap.w.id==myId,W,H,F,dt,snap.w,m);else $('home').hidden=true}
+ if(m&&snap.w&&snap.w.id==myId&&window.VS){if(!vsLoadShown){vsLoadShown=1;window.CSKLoad&&CSKLoad.show();setTimeout(function(){VS.show(snap,myId);window.CSKLoad&&CSKLoad.hide()},260)}$('home').hidden=true}else{vsLoadShown=0;window.VS&&VS.hide();if(m&&snap.w)roundFx((now-winT)/1000,snap.w.id==myId,W,H,F,dt,snap.w,m);else $('home').hidden=true}
  if(conf.length){for(const q of conf){q.vy+=520*dt;q.vx*=1-1.1*dt;q.x+=q.vx*dt;q.y+=q.vy*dt;q.r+=q.vr*dt;q.l-=dt}conf=conf.filter(q=>q.y<H+20&&q.l>0);
   for(const q of conf){cx.save();cx.translate(q.x,q.y);cx.rotate(q.r);cx.scale(1,Math.cos(q.r*2));cx.fillStyle=q.c;cx.fillRect(-q.w/2,-q.h/2,q.w,q.h);cx.restore()}}}
 /* Professional shell: sound toggle, fullscreen, error reporting */
