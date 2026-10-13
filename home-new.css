@@ -76,3 +76,11 @@
 @media (orientation:portrait) and (pointer:coarse){
  #menu,#login{inset:auto!important;top:0!important;left:100vw!important;left:100dvw!important;width:100vh!important;width:100dvh!important;height:100vw!important;height:100dvw!important;transform-origin:0 0;transform:rotate(90deg)}
 }
+
+/* ===== one pop-in transition for every screen/dialog (same feel as the Room popup) ===== */
+@keyframes zinF{from{opacity:0;transform:translateY(3%) scale(.92)}}
+#lob:not([hidden]),#login:not([hidden]),#st:not([hidden]),#ed:not([hidden]){animation:zinF .32s cubic-bezier(.2,.9,.25,1.12)}
+#pm:not([hidden]){animation:pf .18s}
+#pm:not([hidden]) .box{animation:zin .3s cubic-bezier(.2,.9,.25,1.15) both}
+#csk-load.on .sp-stage{animation:zinF .34s cubic-bezier(.2,.9,.25,1.12)}
+@media (prefers-reduced-motion:reduce){#lob,#login,#st,#ed,#pm .box,#csk-load .sp-stage{animation:none!important}}
