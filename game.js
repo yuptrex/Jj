@@ -1496,13 +1496,18 @@ setTimeout(()=>{const b=$('acbtn');if(b)b.onclick=()=>(user||hint)?signOut():sig
 (function(){const g=id=>document.getElementById(id),ls=(k,v)=>{try{if(v===undefined)return JSON.parse(localStorage.getItem(k));localStorage.setItem(k,JSON.stringify(v))}catch(e){return null}};
 const set=Object.assign({vol:90,dn:true,fps:false},ls('ar-set')||{});
 let st=Object.assign({k:0,d:0,w:0,m:0,bs:0},Object.fromEntries(AR_XK.map(x=>[x,0])),(ARA.hint()?ls('ar-stats'):null)||{});   /* progress is only kept for signed-in players */
+/* ---- CHARACTER LEVEL: XP = coins collected + 30 per kill (bots included). Level L needs 25*(L-1)*(L+2) total XP: Lv2 100, Lv3 250, Lv4 450, Lv5 700 ... ---- */
+const KILL_XP=30,LV_MAX=99,xpAt=L=>25*(L-1)*(L+2);
+function lvInfo(){const xp=Math.max(0,(+st.cn||0)+(+st.k||0)*KILL_XP);let L=1;while(L<LV_MAX&&xp>=xpAt(L+1))L++;const a=xpAt(L),b=xpAt(L+1),mx=L>=LV_MAX;return{lv:L,next:mx?L:L+1,xp:xp,cur:xp-a,need:b-a,p:mx?1:Math.min(1,(xp-a)/(b-a)),max:mx}}
+window.CSK_LVL=lvInfo;let lvSeen=lvInfo().lv;
+function lvCheck(){const L=lvInfo().lv;if(L>lvSeen){lvSeen=L;try{cast('LEVEL UP','You reached level '+L,48,0,'upgrade',.9)}catch(x){}}else lvSeen=L}
 const GNAME={pistol:'Pistol',smg:'SMG',shotgun:'Shotgun',rifle:'Rifle',blaster:'Blaster'};
 function showAcc(){const b=g('accb');if(!b)return;if(!ARA.hint()){b.hidden=true;return}b.hidden=false;let S=0,H=0,rows='';
  for(const w in GNAME){const s=st['s_'+w]||0,h=Math.min(st['h_'+w]||0,s);S+=s;H+=h;if(s)rows+='<div class="accr"><span>'+GNAME[w]+'</span><div class="t"><i style="width:'+Math.round(h/s*100)+'%"></i></div><small>'+Math.round(h/s*100)+'% \u00b7 '+h+' / '+s+'</small></div>'}
  g('accT').textContent=S?Math.round(H/S*100)+'%':'\u2013';g('accC').textContent=(st.cn||0).toLocaleString()+' coins collected';g('accR').innerHTML=rows||'<div class="accn">Fire a few shots to build your accuracy record.</div>'}
-function showSt(){g('s1').textContent=st.k;g('s2').textContent=(st.k/Math.max(1,st.d)).toFixed(1);g('s3').textContent=st.w;g('s4').textContent=st.bs;showAcc()}showSt();window.AR_ST={get:()=>st,set:o=>{for(const k of['k','d','w','m','bs',...AR_XK])st[k]=+o[k]||0;showSt()}};window.AR_HUE=h=>{myHue=h;ls('ar-hue',h);[...(g('sw')?g('sw').children:[])].forEach((c,i)=>c.classList.toggle('on',hs[i]==h))};
-const _oe=onEv;onEv=function(e){try{if(e.k=='kill'){if(e.ai==myId&&e.bi!=myId){st.k++;st.bs=Math.max(st.bs,e.ks||0)}if(e.bi==myId)st.d++;ARA.saveStats(st)}else if(e.k=='win'){st.m++;if(e.id==myId)st.w++;ARA.saveStats(st)}
-  else if(e.id==myId&&(e.k=='coin'||e.k=='chest')&&e.v>0){st.cn=(st.cn||0)+(+e.v|0);ARA.saveStats(st);showAcc()}
+function showSt(){g('s1').textContent=st.k;g('s2').textContent=(st.k/Math.max(1,st.d)).toFixed(1);g('s3').textContent=st.w;g('s4').textContent=st.bs;showAcc()}showSt();window.AR_ST={get:()=>st,set:o=>{for(const k of['k','d','w','m','bs',...AR_XK])st[k]=+o[k]||0;showSt();lvSeen=lvInfo().lv}};window.AR_HUE=h=>{myHue=h;ls('ar-hue',h);[...(g('sw')?g('sw').children:[])].forEach((c,i)=>c.classList.toggle('on',hs[i]==h))};
+const _oe=onEv;onEv=function(e){try{if(e.k=='kill'){if(e.ai==myId&&e.bi!=myId){st.k++;st.bs=Math.max(st.bs,e.ks||0)}if(e.bi==myId)st.d++;ARA.saveStats(st);lvCheck()}else if(e.k=='win'){st.m++;if(e.id==myId)st.w++;ARA.saveStats(st)}
+  else if(e.id==myId&&(e.k=='coin'||e.k=='chest')&&e.v>0){st.cn=(st.cn||0)+(+e.v|0);ARA.saveStats(st);showAcc();lvCheck()}
   else if(e.k=='acc'&&e.id==myId&&e.a){for(const w in e.a){if(!GNAME[w])continue;st['s_'+w]=(st['s_'+w]||0)+(e.a[w][0]|0);st['h_'+w]=(st['h_'+w]||0)+(e.a[w][1]|0)}ARA.saveStats(st);showAcc()}}catch(x){}return _oe.apply(this,arguments)};
 const hs=[8,35,55,130,175,210,265,320];let sh=ls('ar-hue');if(sh!=null)myHue=sh;
 hs.forEach(h=>{const b=document.createElement('button');b.className='s'+(h==sh?' on':'');b.style.background='hsl('+h+' 85% 58%)';b.setAttribute('aria-label','Colour '+h);b.onclick=()=>{myHue=h;ls('ar-hue',h);ARA.profile();[...(g('sw')?g('sw').children:[])].forEach(c=>c.classList.toggle('on',c==b))};g('sw')&&g('sw').appendChild(b)});

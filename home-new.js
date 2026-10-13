@@ -49,5 +49,12 @@ var mo=new MutationObserver(photo);mo.observe($('acc'),{attributes:true,attribut
 var nm=$('nm'),nv=$('nmv'),nt=$('nmt'),last=null;
 function name(){var v=(nm.value||'').trim()||'Player';if(v===last)return;last=v;nt.textContent=v;nv.classList.remove('mq');
  requestAnimationFrame(function(){var o=nt.offsetWidth-nv.clientWidth;if(o>2){nv.style.setProperty('--s',-(o+8)+'px');nv.style.setProperty('--d',Math.max(4,o/25)+'s');nv.classList.add('mq')}})}
-setInterval(function(){photo();name()},500);photo();name();
+var lvn=$('lvn'),lvl=$('lvl'),lvf=$('lvf'),lvx=$('lvx'),lvLast=0;
+/* character level: number beside the art's "Lv.", progress bar toward the next level (e.g. 3 -> 4) */
+function level(){if(!window.CSK_LVL)return;var i;try{i=CSK_LVL()}catch(e){return}
+ var d=String(i.lv).length;lvn.textContent=i.lv;lvn.dataset.d=d>3?3:d;
+ lvx.textContent=i.max?'MAX':i.next;if(i.max)lvx.setAttribute('data-m','');else lvx.removeAttribute('data-m');lvf.style.width=(i.p>0?Math.max(5,i.p*100):0).toFixed(1)+'%';
+ lvl.title='Level '+i.lv+(i.max?' (max)':' \u00b7 '+i.cur+' / '+i.need+' XP to level '+i.next);
+ if(lvLast&&i.lv>lvLast){lvn.classList.remove('up');void lvn.offsetWidth;lvn.classList.add('up')}lvLast=i.lv}
+setInterval(function(){photo();name();level()},500);photo();name();level();
 })();
