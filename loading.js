@@ -49,7 +49,7 @@ function setArt(img,a){
  if(!img||!a)return;
  var url=(window.CSKAssets&&CSKAssets.url&&CSKAssets.url(a.f))||a.f,st=img.parentNode;   /* local cached copy when we have one */
  if(st&&st.style){st.style.setProperty('--oxn',a.x);st.style.setProperty('--bx',a.bar[0]);st.style.setProperty('--by',a.bar[1]);st.style.setProperty('--bw',a.bar[2]);st.style.setProperty('--bh',a.bar[3])}
- img.src=url}
+ img.dataset.art=a.f;img.src=url}
 window.CSKLoadArt={files:ART.map(function(a){return a.f}),pick:pickArt,set:setArt};
 var first=ART[0];
 window.CSKLoadArt.first=first;
