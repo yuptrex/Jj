@@ -24,11 +24,7 @@
 <link rel="stylesheet" href="loading.css">
 <link rel="stylesheet" href="login.css"><link rel="stylesheet" href="settings.css">
 <script src="loading.js"></script>   <!-- picks + preloads the random splash art -->
-<link rel="preload" as="image" href="home-art2.jpg">
 <link rel="prefetch" as="image" href="login-bg.jpg">
-<link rel="prefetch" as="image" href="setup-card.png"><link rel="prefetch" as="image" href="st-general.webp"><link rel="prefetch" as="image" href="st-keyboard.webp">
-<link rel="prefetch" as="image" href="lobby-bg.jpg">
-<link rel="prefetch" as="image" href="rm-main.webp"><link rel="prefetch" as="image" href="rm-create.webp"><link rel="prefetch" as="image" href="rm-join.webp">
 </head><body>
 <!-- Loading splash: covers first paint while fonts/Firebase/game script initialize.
      Pure presentation — does not touch any game state or element the game script uses. -->
@@ -49,6 +45,7 @@
   </div>
 </div>
 <script src="asset-cache.js"></script>
+<script src="boot-gate.js"></script>   <!-- signed out = light page; everything heavy loads after login -->
 <script>
 /* Loading screen progress: real checkpoints are reported by __cskProg(n) between the big script loads below;
    in between, the bar creeps forward so it never looks frozen. It reaches 100% once window "load" fires
@@ -70,7 +67,7 @@
   var winLoaded=document.readyState==='complete',assetsLoaded=false;
   function maybeFinish(){if(winLoaded&&assetsLoaded)closing=1}
   if(winLoaded){}else window.addEventListener('load',function(){winLoaded=true;maybeFinish()});
-  if(window.CSKAssets)CSKAssets.preload(function(done){__cskProg(20+75*done)}).then(function(){assetsLoaded=true;maybeFinish()});
+  if(window.CSKAssets)CSKAssets.preload(function(done){__cskProg(20+75*done)},window.CSK_PRE?'boot':'all').then(function(){assetsLoaded=true;maybeFinish()});
   else assetsLoaded=true;
   setTimeout(function(){closing=1},7000);  /* safety net */
 })();
@@ -80,7 +77,7 @@
 <div id="pm" hidden><div class="box"><h1>PAUSED</h1><div class="tag" id="pn"></div><button id="pr">RESUME</button><button class="s" id="pl">BUTTON LAYOUT</button><button class="s" id="ph">EXIT TO HOME</button></div></div>
 <div id="ed" hidden><canvas id="ec"></canvas><div id="ep"><b>BUTTON LAYOUT</b><span id="en"></span><label>Size <input type="range" id="esz" min="50" max="180" value="100"></label><label>Opacity <input type="range" id="eop" min="25" max="100" value="100"></label><button class="s" id="ers">RESET</button><button id="eok">SAVE &amp; CLOSE</button></div></div>
 <div id="menu"><div class="hs">
-<img class="hs-bg" src="home-art2.jpg" alt="Clash of Super Knights" draggable="false" decoding="sync" fetchpriority="high">
+<img class="hs-bg" data-src="home-art2.jpg" alt="Clash of Super Knights" draggable="false" decoding="sync">
 <div class="hs-ui">
  <div id="acc" data-s="guest" data-nudge="0">
   <button class="hb" id="pav" type="button" aria-label="Profile" style="--x:16;--y:22;--w:128;--h:128"><i class="face"></i><i class="pho"><img alt="" draggable="false" referrerpolicy="no-referrer" decoding="async"></i></button>
@@ -182,8 +179,7 @@
 
 <div id="st" hidden role="dialog" aria-label="Settings"><div class="sxw"><div class="sx" data-p="g"><button class="hz" id="stx" type="button" aria-label="Close" style="--x:1396;--y:80;--w:104;--h:104"></button><button class="hz" type="button" data-t="g" aria-label="General" style="--x:140;--y:203;--w:326;--h:84"></button><button class="hz" type="button" data-t="k" aria-label="Keyboard" style="--x:486;--y:203;--w:314;--h:84"></button><div class="pg" id="sx-g"><button class="so" id="st-so" type="button" aria-label="Sign out" hidden style="--x:165;--y:806;--w:336;--h:70"><span>⎋ SIGN OUT</span></button><div class="pt st" style="--x:203;--y:367;--w:116;--h:42"><b id="s1">0</b></div><div class="pt st" style="--x:395;--y:367;--w:116;--h:42"><b id="s2">0</b></div><div class="pt st" style="--x:587;--y:367;--w:116;--h:42"><b id="s3">0</b></div><div class="pt st" style="--x:784;--y:367;--w:116;--h:42"><b id="s4">0</b></div><div class="pt ac" style="--x:158;--y:452;--w:782;--h:84"><div class="accb" id="accb"><div class="accb-h"><b>GUN ACCURACY</b><span id="accT">–</span><em id="accC"></em></div><div id="accR"></div></div></div><div class="pt vl" style="--x:1172;--y:380;--w:160;--h:32"><input type="range" id="vol" min="0" max="100"></div><div class="pt vt" style="--x:1334;--y:380;--w:56;--h:32"><span id="vv"></span></div><button class="sk" id="o-mute" role="switch" type="button" style="--x:1324;--y:435;--w:56;--h:34"><i></i></button><button class="sk" data-o="dr" role="switch" type="button" style="--x:1324;--y:491;--w:56;--h:34"><i></i></button><button class="sk tg" data-k="dn" role="switch" type="button" style="--x:443;--y:618;--w:56;--h:34"><i></i></button><button class="sk tg" data-k="fps" role="switch" type="button" style="--x:443;--y:680;--w:56;--h:34"><i></i></button><button class="sk" data-o="hf" role="switch" type="button" style="--x:895;--y:789;--w:56;--h:34"><i></i></button><button class="sk" data-o="kf" role="switch" type="button" style="--x:895;--y:845;--w:56;--h:34"><i></i></button><button class="sk" data-o="an" role="switch" type="button" style="--x:1326;--y:616;--w:56;--h:34"><i></i></button><button class="sk" data-o="tp" role="switch" type="button" style="--x:1326;--y:673;--w:56;--h:34"><i></i></button><div class="seg" data-seg="gfx" style="--x:778;--y:615;--w:176;--h:38"><button type="button" data-i="0">LOW</button><button type="button" data-i="1">MED</button><button type="button" data-i="2">HIGH</button></div><div class="seg" data-seg="shk" style="--x:778;--y:677;--w:176;--h:38"><button type="button" data-i="0">OFF</button><button type="button" data-i="1">LOW</button><button type="button" data-i="2">FULL</button></div><div class="seg" data-seg="fx" style="--x:778;--y:734;--w:176;--h:38"><button type="button" data-i="0">LOW</button><button type="button" data-i="1">MED</button><button type="button" data-i="2">HIGH</button></div><button class="hz" id="o-fs" type="button" aria-label="Fullscreen" style="--x:389;--y:744;--w:112;--h:42"></button><button class="hz" id="o-ed" type="button" aria-label="Edit layout" style="--x:1253;--y:729;--w:154;--h:42"></button><button class="hz" id="o-rs" type="button" aria-label="Reset settings" style="--x:1276;--y:788;--w:103;--h:40"></button><button class="hz" id="o-rt" type="button" aria-label="Reset career stats" style="--x:1276;--y:844;--w:103;--h:40"></button></div><div class="pg" id="sx-k" hidden><button class="hz" id="kb-rs" type="button" aria-label="Reset controls" style="--x:1060;--y:334;--w:328;--h:62"></button><div id="kg"></div></div></div></div></div><div id="swp" class="off"></div><div id="swb" class="off" role="button" aria-label="Swap weapon"></div><div id="eqp"></div><div id="crb" class="off" role="button" aria-label="Open crate"></div><div id="crp" class="off"></div><div id="fps"></div><div id="err" role="alert"></div>
 
-<!-- Sound bank (large, kept as its own file to keep index.html light) -->
-<script src="sfx-data.js"></script>
+<!-- Sound bank (2 MB): loaded by boot-gate.js after login, not here -->
 <script>window.__cskProg&&__cskProg(45)</script>
 <!-- Firebase (multiplayer backend) -->
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>

@@ -12,8 +12,8 @@ document.addEventListener('selectstart',function(e){if(!ed(e.target))e.preventDe
 document.addEventListener('dragstart',function(e){e.preventDefault()},true);
 })();
 
-/* Low-end / mobile detection. Google sign-in uses a same-tab redirect there (a popup opens a second tab and the OS can kill the game tab to free RAM). */
+/* Low-end / mobile detection. Google sign-in opens the account picker in a separate tab/window (popup) and returns to this tab when done; the heavy assets are only loaded after login (boot-gate.js) so the waiting game tab stays small. A same-tab redirect is only the fallback when the browser blocks the popup (or with ?redirect=1). */
 (function(){var m=navigator.deviceMemory||8,c=navigator.hardwareConcurrency||8,mob=/Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent)||(navigator.maxTouchPoints>1&&/Mac/.test(navigator.platform));
-window.CSK_LOW=m<=4||c<=4;window.CSK_REDIRECT=mob||window.CSK_LOW;
+window.CSK_LOW=m<=4||c<=4;window.CSK_REDIRECT=/[?&]redirect=1\b/.test(location.search);
 try{if(window.CSK_LOW&&!localStorage.getItem('ar-set2'))localStorage.setItem('ar-set2',JSON.stringify({gfx:0,shk:1,fx:0}))}catch(e){}
 })();

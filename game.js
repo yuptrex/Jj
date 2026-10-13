@@ -288,15 +288,20 @@ const SV={laser:.55,cannon:.8,sniper:.85,mag:.8,drums:.62,reload:.5,hitmarker:.5
  dash:.5,weapon:.6,heal:.6,shield:.6,speed:.55,coin:.38,chest:.75,upgrade:.65,spawn:.45,respawn:.7,tick:.5,heart:.8,ui:.5,
  victory:.9,defeat:.85,matchpoint:.6,firstblood:.85,streak2:.65,streak3:.75,streak4:.85,shutdown:.75,revenge:.75};
 let AC,MG,SB={},act=0,cnt={};
+/* The 2 MB sound bank is loaded only after login (boot-gate.js). Decode it once it exists AND the audio context exists, then drop the base64 text to free RAM. */
+function decodeBank(){const B=window.SFX_B64;if(!AC||!B)return;window.SFX_B64=null;
+ const G1=['laser','cannon','sniper','mag'],rk=k=>G1.includes(k)?0:k=='drums'?2:1;
+ for(const k of Object.keys(B).sort((a,b)=>rk(a)-rk(b))){try{const s=atob(B[k]),u=new Uint8Array(s.length);for(let i=0;i<s.length;i++)u[i]=s.charCodeAt(i);
+  const pr=AC.decodeAudioData(u.buffer,b=>{SB[k]=b},()=>{});if(pr&&pr.catch)pr.catch(()=>{})}catch(e){}}}
+window.CSK_decodeSounds=decodeBank;
 function audioInit(){
- if(AC){if(AC.state=='suspended')AC.resume();return}
+ if(window.CSK_PRE)return;   /* nobody signed in yet: no audio engine, no sound bank */
+ if(AC){if(AC.state=='suspended')AC.resume();decodeBank();return}
  try{AC=new(window.AudioContext||window.webkitAudioContext)({latencyHint:"interactive"});MG=AC.createGain();MG.gain.value=.9;
   const cp=AC.createDynamicsCompressor();cp.threshold.value=-12;cp.knee.value=14;cp.ratio.value=4;cp.attack.value=.003;cp.release.value=.18;MG.connect(cp);cp.connect(AC.destination);
   AC.onstatechange=()=>{if(AC&&(AC.state=='suspended'||AC.state=='interrupted')){try{AC.resume()}catch(e){}}};
   try{const wb=AC.createBuffer(1,1,22050),ws=AC.createBufferSource();ws.buffer=wb;ws.connect(AC.destination);ws.start(0)}catch(e){}   // wake the audio hardware now, not on the first shot
-  const G1=['laser','cannon','sniper','mag'],rk=k=>G1.includes(k)?0:k=='drums'?2:1;
-  for(const k of Object.keys(SFX_B64).sort((a,b)=>rk(a)-rk(b))){const s=atob(SFX_B64[k]),u=new Uint8Array(s.length);for(let i=0;i<s.length;i++)u[i]=s.charCodeAt(i);
-   try{const pr=AC.decodeAudioData(u.buffer,b=>{SB[k]=b},()=>{});if(pr&&pr.catch)pr.catch(()=>{})}catch(e){}}
+  decodeBank();
  }catch(e){AC=null}}
 function sfx(n,o){o=o||{};const b=SB[n];if(mute||!AC||!b)return;const vol=o.vol==null?1:o.vol,bk=n.replace(/\d$/,'');if(vol<(o.low?.06:.02))return;if(o.low&&(act>18||(cnt[bk]||0)>=3))return;
  const s=AC.createBufferSource();s.buffer=b;s.playbackRate.value=(o.rate||1)*(o.j===0?1:1+(Math.random()-.5)*(o.j||.06));
@@ -1473,9 +1478,9 @@ function attach(){if(attached)return true;if(!initAuth())return false;attached=t
   if(hint){hint=null;['ar-acct','ar-stats','ar-base','ar-cs'].forEach(LD);base=Z();setS(Z())}   /* saved session expired: continue as guest */
   user=null;note='';ui()}});return true}
 function initAuth(){if(auth)return true;try{const d=window.fbInit&&window.fbInit();if(!d||!window.firebase||!firebase.auth)return false;db=d;auth=firebase.auth();return true}catch(e){return false}}
-function fail(e){busy=false;const c=e&&e.code||'';if(c=='auth/popup-closed-by-user'||c=='auth/cancelled-popup-request'){ui();return}flash('Login failed',1)}
+function fail(e){busy=false;try{CSKBoot.release()}catch(x){}const c=e&&e.code||'';if(c=='auth/popup-closed-by-user'||c=='auth/cancelled-popup-request'){ui();return}flash('Login failed',1)}
 async function signIn(){if(busy)return;if(!attach()){flash('Login failed',1);return}
- busy=true;ui();const pr=new firebase.auth.GoogleAuthProvider();pr.setCustomParameters({prompt:'select_account'});
+ busy=true;ui();try{CSKBoot.hold()}catch(x){}const pr=new firebase.auth.GoogleAuthProvider();pr.setCustomParameters({prompt:'select_account'});
  try{if(window.CSK_REDIRECT){await auth.signInWithRedirect(pr);return}await auth.signInWithPopup(pr)}
  catch(e){if(e&&e.code=='auth/popup-blocked'){try{await auth.signInWithRedirect(pr);return}catch(x){e=x}}fail(e)}}
 async function signOut(){if(busy)return;busy=true;ui('Saving…');

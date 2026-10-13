@@ -47,7 +47,7 @@ function photo(){var a=window.ARA&&ARA.account&&ARA.account(),u=a&&a.photo?hi(a.
  if(phImg.complete&&phImg.naturalWidth>0)acc.dataset.photo='1'}
 var mo=new MutationObserver(photo);mo.observe($('acc'),{attributes:true,attributeFilter:['data-s']});mo.observe($('acn'),{childList:true,characterData:true,subtree:true});
 var nm=$('nm'),nv=$('nmv'),nt=$('nmt'),last=null;
-function name(){var v=(nm.value||'').trim()||'Player';if(v===last)return;last=v;nt.textContent=v;nv.classList.remove('mq');
+function name(){var v=(nm.value||'').trim()||'Player';if(v===last)return;nt.textContent=v;if(!nv.clientWidth)return;last=v;nv.classList.remove('mq');
  requestAnimationFrame(function(){var o=nt.offsetWidth-nv.clientWidth;if(o>2){nv.style.setProperty('--s',-(o+8)+'px');nv.style.setProperty('--d',Math.max(4,o/25)+'s');nv.classList.add('mq')}})}
 var lvn=$('lvn'),lvl=$('lvl'),lvf=$('lvf'),lvx=$('lvx'),lvLast=0;
 /* character level: number beside the art's "Lv.", progress bar toward the next level (e.g. 3 -> 4) */

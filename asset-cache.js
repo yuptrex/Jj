@@ -8,6 +8,16 @@
 var BUILD='v21';   /* bump when any asset file changes, so old cached copies are dropped */
 var ASSETS=['ld-bw.jpg','ld-night.jpg','ld-day.jpg','ld-dusk.jpg','home-art2.jpg','lobby-bg.jpg','login-bg.jpg','victory-bg.png',
  'setup-card.png','setup-btn.png','login-btn-go.png','login-btn-google.png','rm-main.webp','rm-create.webp','rm-join.webp','hero-bg.svg'];
+/* Stage 1 (before login): only what the splash + sign-in screen show. Stage 2 (after login): the rest.
+   On low-end devices the big screens (victory, lobby, room cards) are not pre-downloaded at all; they load on demand. */
+var BOOT=['ld-bw.jpg','login-bg.jpg','login-btn-go.png','login-btn-google.png'],
+    LAZY=['victory-bg.png','lobby-bg.jpg','rm-main.webp','rm-create.webp','rm-join.webp'];
+function listFor(which){
+ var all=ASSETS.slice();
+ if(which==='boot')return BOOT.slice();
+ if(which==='main')all=all.filter(function(n){return BOOT.indexOf(n)<0});
+ if(window.CSK_LOW)all=all.filter(function(n){return LAZY.indexOf(n)<0});
+ return all}
 var DB='csk-assets',STORE='files',VER=1;
 function openDB(){return new Promise(function(res,rej){
  var r=indexedDB.open(DB,VER);
@@ -40,8 +50,8 @@ function fetchBlob(name,onFrac){
 
 window.CSKAssets={
  url:function(name){return URLS[name]||''},
- preload:function(onProgress){
-  var n=ASSETS.length,fr=ASSETS.map(function(){return 0});
+ preload:function(onProgress,which){
+  var ASSETS=listFor(which),n=ASSETS.length,fr=ASSETS.map(function(){return 0});
   function report(){var s=0;for(var i=0;i<n;i++)s+=fr[i];onProgress&&onProgress(s/n)}
   var dbP;
   try{dbP=openDB()}catch(e){dbP=Promise.reject(e)}
