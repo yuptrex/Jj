@@ -44,8 +44,7 @@
 .lob-btn .face{position:absolute;inset:0;display:block;pointer-events:none;
   background:url("lobby-bg.jpg") no-repeat;background-size:var(--bgw) var(--bgh);background-position:var(--bgx) var(--bgy);
   clip-path:var(--clip);-webkit-clip-path:var(--clip);opacity:0;
-  transition:transform .12s cubic-bezier(.2,.8,.2,1),filter .12s,opacity .08s}
-@media (hover:hover){.lob-btn:not(:disabled):hover .face{opacity:1;filter:brightness(1.12) saturate(1.1)}}
+  transition:transform .12s cubic-bezier(.2,.8,.2,1),filter .12s,opacity .08s}@media (hover:hover){.lob-btn:not(:disabled):hover .face{opacity:1;filter:brightness(1.12) saturate(1.1)}}
 .lob-btn:not(:disabled):active .face{opacity:1;filter:brightness(.85) saturate(1.15);transform:translateY(3%) scale(.965);transition-duration:.06s}
 .lob-btn:focus-visible{outline:2px solid #ffd067;outline-offset:3px}
 
@@ -84,8 +83,7 @@
   padding:0 6%;font-weight:700;font-size:calc(var(--u) * 15);letter-spacing:.03em;color:#fff;line-height:1;
   white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-shadow:0 1px 2px #000}
 .lob-pill small{font-weight:600;color:#9fb8d8;margin-left:.4em;font-size:.8em}
-.lob-open .lob-pill{color:#6f8db8;letter-spacing:.1em}
-@media (hover:hover){.lob-open:hover .lob-pill{color:#cfe3ff}
+.lob-open .lob-pill{color:#6f8db8;letter-spacing:.1em}@media (hover:hover){.lob-open:hover .lob-pill{color:#cfe3ff}
   .lob-open:hover .lob-glow{opacity:1}}
 .lob-glow{inset:2px;opacity:0;pointer-events:none;border-radius:6px;transition:opacity .15s;
   box-shadow:0 0 calc(var(--u) * 16) #ffb02e99,inset 0 0 calc(var(--u) * 14) #ffb02e44;border:1px solid #ffd067aa}
@@ -120,8 +118,7 @@
 /* (loading screen styles moved to loading.css) */
 
 /* ---------------------------------------------------------- host: tap a player -> small popup with KICK OUT */
-.lob-pick{cursor:pointer}
-@media (hover:hover){.lob-pick:hover .lob-glow{opacity:1}}
+.lob-pick{cursor:pointer}@media (hover:hover){.lob-pick:hover .lob-glow{opacity:1}}
 .lob-pop{z-index:6;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:calc(var(--u) * 7);
   padding:calc(var(--u) * 8);border-radius:calc(var(--u) * 10);
   background:linear-gradient(180deg,#101c33f2,#070d1af2);border:1px solid #ffd067aa;
@@ -181,5 +178,4 @@
 /* soft vignette + blur toward the very bottom so the scene melts into the art */
 .fx-haze{left:0;right:0;bottom:0;height:30%;background:linear-gradient(180deg,transparent,#04070dcc);
   -webkit-backdrop-filter:blur(1.5px);backdrop-filter:blur(1.5px);
-  -webkit-mask-image:linear-gradient(180deg,transparent,#000 70%);mask-image:linear-gradient(180deg,transparent,#000 70%)}
-@media (prefers-reduced-motion:reduce){.lob-fx{display:none}}
+  -webkit-mask-image:linear-gradient(180deg,transparent,#000 70%);mask-image:linear-gradient(180deg,transparent,#000 70%)}@media (prefers-reduced-motion:reduce){.lob-fx{display:none}}
