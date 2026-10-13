@@ -81,3 +81,17 @@
 #pm:not([hidden]){animation:pf .18s}
 #pm:not([hidden]) .box{animation:zin .3s cubic-bezier(.2,.9,.25,1.15) both}
 #csk-load.on .sp-stage{animation:zinF .34s cubic-bezier(.2,.9,.25,1.12)}@media (prefers-reduced-motion:reduce){#lob,#login,#st,#ed,#pm .box,#csk-load .sp-stage{animation:none!important}}
+
+/* ===== lock-down: no zoom / long-press / selection ===== */
+html,body{touch-action:pan-x pan-y;overscroll-behavior:none;-webkit-text-size-adjust:100%;text-size-adjust:100%;-webkit-touch-callout:none;-webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent}
+*{-webkit-touch-callout:none}
+img,svg,canvas{-webkit-user-drag:none;user-drag:none}
+input,textarea{-webkit-user-select:text;user-select:text}
+/* ===== room popup: pure fade in / fade out ===== */
+#pop{animation:pf .25s ease both}
+#pop.closing{animation:pfo .2s ease forwards}
+#pop .zc{position:absolute;left:50%;top:50%;translate:-50% -50%;margin:0}
+.zc.in{animation:zfi .25s ease both}
+.zc.out{animation:zfo .2s ease forwards;pointer-events:none}
+@keyframes zfi{from{opacity:0}to{opacity:1}}
+@keyframes zfo{from{opacity:1}to{opacity:0}}

@@ -16,10 +16,10 @@ var cards=['pmain','pnew','pcode'],cur='pmain',pt=0;
 function show(id,instant){
  cards.forEach(function(c){var el=$(c);
   if(c===id){el.hidden=false;el.classList.remove('out');if(!instant){el.classList.remove('in');void el.offsetWidth;el.classList.add('in')}}
-  else if(!el.hidden){if(instant){el.hidden=true}else{el.classList.add('out');setTimeout(function(){if(cur!==c){el.hidden=true}el.classList.remove('out')},160)}}});
+  else if(!el.hidden){if(instant){el.hidden=true}else{el.classList.add('out');setTimeout(function(){if(cur!==c){el.hidden=true}el.classList.remove('out')},200)}}});
  cur=id}
 function openPop(){clearTimeout(pt);$('pop').classList.remove('closing');cards.forEach(function(c){$(c).hidden=true;$(c).classList.remove('in','out')});$('pop').hidden=false;show('pmain')}
-function closePop(){if($('pop').hidden)return;$('pop').classList.add('closing');clearTimeout(pt);pt=setTimeout(function(){$('pop').hidden=true;$('pop').classList.remove('closing')},160)}
+function closePop(){if($('pop').hidden)return;$('pop').classList.add('closing');clearTimeout(pt);pt=setTimeout(function(){$('pop').hidden=true;$('pop').classList.remove('closing')},200)}
 function shut(){clearTimeout(pt);$('pop').hidden=true;$('pop').classList.remove('closing')}
 $('mstart').onclick=function(){if(mode==='solo')$('solo').click();else openPop()};
 $('pclose').onclick=closePop;

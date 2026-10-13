@@ -53,7 +53,7 @@ async function google(){
  var a=getAuth();if(!a){say('Could not reach the server. Check your connection or ad-blocker, then reload.','bad');return}
  setBusy(true);say('Opening Google\u2026');
  var p=new firebase.auth.GoogleAuthProvider();p.setCustomParameters({prompt:'select_account'});
- try{await a.signInWithPopup(p);say('Signing in\u2026')}
+ try{if(window.CSK_REDIRECT){say('Signing in\u2026');await a.signInWithRedirect(p);return}await a.signInWithPopup(p);say('Signing in\u2026')}
  catch(e){if(e&&e.code==='auth/popup-blocked'){try{await a.signInWithRedirect(p);return}catch(x){e=x}}fail(e)}}
 async function emailLogin(){
  if(busy)return;if(needTerms())return;
