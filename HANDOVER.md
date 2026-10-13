@@ -426,3 +426,13 @@ The arena (floor, walls, pickups, bullets, particles, lighting) was dull; it is 
 - Tested in headless Chromium (software rendering, so absolute fps is not representative) at 1280x720 and 844x390, both levels, with no console errors. **Please test on a real phone.**
 
 **game.js edits (all small):** hook call in `onEv`; `burst()` particles flagged as glow; render() wrapped so BFX draws floor/walls/pads/coins/bullets/players/rings/particles/texts/post-fx with the old code kept as fallback; `SZ` zoom-punch in the world transform; `BFX.reset()` in `start()`.
+
+---
+
+## v12 — New login screen + name/password setup
+
+- `login.css`, `login.js`, `login-bg.jpg`, `login-btn-google.png`, `login-btn-go.png`, `setup-card.png`, `setup-btn.png` (new).
+- `#login` markup added in `index.html` before the waiting-room lobby; shown whenever nobody is signed in.
+- `game.js` `settleName()` now calls `CSKLogin.ask()` (popup) and `CSKLogin.ready()` (hides the login screen).
+- Name: `users/<uid>/callsign` (written once). Password: Firebase Auth email/password credential linked to the Google account.
+- Needs **Authentication -> Sign-in method -> Email/Password** enabled in the Firebase console.
