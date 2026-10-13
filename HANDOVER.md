@@ -436,3 +436,33 @@ The arena (floor, walls, pickups, bullets, particles, lighting) was dull; it is 
 - `game.js` `settleName()` now calls `CSKLogin.ask()` (popup) and `CSKLogin.ready()` (hides the login screen).
 - Name: `users/<uid>/callsign` (written once). Password: Firebase Auth email/password credential linked to the Google account.
 - Needs **Authentication -> Sign-in method -> Email/Password** enabled in the Firebase console.
+
+---
+
+## Random loading screens (latest change)
+
+- The old `loading-bg.jpg` (single stretched art with painted bar) is **gone**. Replaced by four scenes, `loading-1.jpg` ... `loading-4.jpg`
+  (1.0 = knights + castle, 2 = cave platformer, 3 = snow bridge, 4 = lava castle). They are the scene area only: the painted bar,
+  "LOADING..." and % of the source panels were cropped off.
+- A random scene is picked every time a loader appears (first-boot splash and every `CSKLoad.show()`), never the same one twice in a
+  row (last pick kept in localStorage `csk-load-last`). The list + per-image focus point live in the `ART` array in `loading.js`.
+  To add a scene: drop the jpg in, add it to `ART` (and to `ASSETS` in `asset-cache.js`).
+- Fit: art is 2.5:1 and always covers the screen (`object-fit:cover`, no stretching, no bars). Screens narrower than 2.5:1 trim the sides
+  around the focus point `x` set per image in `ART`.
+- The bar, "LOADING..." label, % and tip are live HTML in a strip at the bottom (`loading.css`, which replaces the old loading rules in
+  `theme-lobby.css`). Element ids are unchanged (`sp-fill/sp-pct/sp-tip`, `ld-fill/ld-pct/ld-tip`), plus new `sp-bg` / `ld-bg` for the art.
+- `loading.js` now loads from `<head>` so the splash art can be chosen and preloaded immediately. `CSKAssets.url(name)` returns the cached
+  blob URL of an asset (used so random scenes also load from the local cache).
+
+---
+
+## No auto level 2, always-full-screen (latest change)
+
+- Winning a solo match no longer queues level 2. The end-screen button is always **BACK TO HOME** and goes home; the old
+  `ar-auto` localStorage flag is no longer written (a stale one is cleared on load). Level 2 is still pickable manually (`#l2`).
+- Full screen (`fullscreen.js`): the game goes full screen on the player's first tap/click/key after the page opens (browsers need a
+  gesture). The game never exits full screen itself: the victory screen no longer calls `exitFullscreen` (removed in `victory.js`).
+  Only the player can leave (full-screen button or Esc). That choice is remembered for the session (`sessionStorage csk-fs-off`) so
+  Back to Home's page reload does not force it back on; the full-screen button turns it on again.
+- Note: Back to Home still reloads the page, and every browser drops full screen on reload, so the first tap after returning home
+  re-enters full screen.

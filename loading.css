@@ -1,0 +1,45 @@
+/* ===========================================================
+   LOADING SCREEN (first-boot splash #csk-splash + every screen switch #csk-load)
+   - Art: loading-1..4.jpg, one picked at random each time (see loading.js).
+   - Fit: the art is 2.5:1 and always FILLS the screen (object-fit:cover, never stretched, no bars).
+     On screens narrower than 2.5:1 the sides are trimmed around a per-image focus point (--ox).
+   - The progress bar, "LOADING..." label, % and tip are live HTML sitting in a strip along the bottom,
+     sized from --u (1 unit = 1px on a 1983x793 screen) so they scale with any screen.
+   =========================================================== */
+#csk-splash,#csk-load{position:fixed;inset:0;display:block;background:#05080b;overflow:hidden;container-type:size}
+#csk-splash{z-index:999;transition:opacity .5s ease,visibility .5s}
+#csk-splash::before{content:none}
+#csk-splash.csk-hide{opacity:0;visibility:hidden;pointer-events:none}
+#csk-load{z-index:990;opacity:0;visibility:hidden;pointer-events:none;transition:opacity .28s ease,visibility .28s}
+#csk-load.on{opacity:1;visibility:visible;pointer-events:auto}   /* while up it also swallows taps, so nothing double-fires */
+#csk-load[hidden]{display:none}
+
+#csk-splash .sp-bg,#csk-load .sp-bg{position:absolute;inset:0;width:100%;height:100%;display:block;
+  object-fit:cover;object-position:var(--ox,50%) 40%;pointer-events:none;-webkit-user-drag:none}
+
+#csk-splash .sp-ui,#csk-load .sp-ui{position:absolute;inset:0;--u:min(100cqw / 1983, 100cqh / 793);pointer-events:none}
+/* dark fade along the bottom so the bar + text stay readable on any scene */
+#csk-splash .sp-ui::before,#csk-load .sp-ui::before{content:"";position:absolute;left:0;right:0;bottom:0;height:calc(var(--u) * 210);
+  background:linear-gradient(180deg,#05080b00 0,#05080bb8 55%,#05080bea 100%)}
+
+.sp-hud{position:absolute;left:50%;bottom:calc(var(--u) * 24);transform:translateX(-50%);
+  width:min(92%,calc(var(--u) * 1180));display:flex;flex-direction:column;align-items:center;gap:calc(var(--u) * 14)}
+.sp-row{display:flex;align-items:center;gap:calc(var(--u) * 22);width:100%}
+
+.sp-lbl,.sp-pct{font-family:var(--csk-font-display,Rajdhani,system-ui,sans-serif);font-weight:700;line-height:1;white-space:nowrap;
+  font-size:max(12px,calc(var(--u) * 34));letter-spacing:.07em;
+  -webkit-text-stroke:max(1px,calc(var(--u) * 3)) #1a1203;paint-order:stroke fill;text-shadow:0 2px 4px #000a}
+.sp-lbl{color:#ffd067}
+.sp-pct{color:#fff;min-width:3.4em;text-align:right}
+
+.sp-track{position:relative;flex:1;overflow:hidden;box-sizing:border-box;
+  height:max(14px,calc(var(--u) * 34));border:max(2px,calc(var(--u) * 4)) solid #e0aa45;border-radius:calc(var(--u) * 6);
+  background:#070b12f2;box-shadow:0 0 0 1px #000c,0 4px 14px #000b,inset 0 2px 6px #000c}
+.sp-fill{position:absolute;left:0;top:0;bottom:0;width:0;
+  background:linear-gradient(180deg,#9aeaff 0,#2ebcff 38%,#0a7cff 100%);box-shadow:inset 0 1px 0 #e2f8ff,0 0 calc(var(--u) * 14) #2ea8ff99}
+
+/* rotating tip (text comes from CSKTips in loading.js) */
+.sp-tip{width:100%;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  font-family:var(--csk-font-body,Inter,system-ui,sans-serif);font-weight:500;letter-spacing:.01em;color:#fff;
+  font-size:max(10px,calc(var(--u) * 22));line-height:1.2;text-shadow:0 1px 3px #000,0 0 calc(var(--u) * 8) #000;
+  transition:opacity .24s ease;pointer-events:none}

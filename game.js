@@ -734,8 +734,8 @@ function start(mode,room){try{window.BFX&&BFX.reset()}catch(x){}audioInit();setT
 try{$('nm').value=localStorage.getItem('ar-name')||''}catch(e){}
 function pickLv(n){selLv=n;$('l1').classList.toggle('on',n==1);$('l2').classList.toggle('on',n==2);sfx('ui',{j:0})}$('l1').onclick=()=>pickLv(1);$('l2').onclick=()=>pickLv(2);
 selLv=Math.random()<.5?1:2; /* map is random: no map buttons on the home screen */
-try{const au=localStorage.getItem('ar-auto');if(au){localStorage.removeItem('ar-auto');pickLv(+au);setTimeout(()=>start('solo'),60)}}catch(e){}
-$('home').onclick=()=>{if(snap.w&&snap.w.id==myId&&sim&&!net&&LV<2)try{localStorage.setItem('ar-auto','2')}catch(e){}sfx('ui',{j:0});try{net&&net.send({t:'bye',id:myId})}catch(e){}setTimeout(()=>location.reload(),160)};$('solo').onclick=()=>start('solo');function goOnline(mode){audioInit();
+try{localStorage.removeItem('ar-auto')}catch(e){}   /* no more auto-start of level 2 after a win: Back to Home just goes home */
+$('home').onclick=()=>{sfx('ui',{j:0});try{net&&net.send({t:'bye',id:myId})}catch(e){}setTimeout(()=>location.reload(),160)};$('solo').onclick=()=>start('solo');function goOnline(mode){audioInit();
   if(!fbInit()){netNote('Could not load Firebase. Check your internet connection and reload.',1);return}
   const busy=b=>{$('host').disabled=b;$('join').disabled=b};
   if(mode=='host'){busy(1);$('msg').textContent='';waitUp(9000).then(()=>withTimeout(createRoomCode(),9000)).then(c=>{busy(0);start('host',c)}).catch(e=>{busy(0);netNote(netErr(e),1)});return}
@@ -1279,7 +1279,7 @@ function roundFx(t,won,W,H,F,dt,w,m){
   cx.textAlign='left';cx.fillStyle=isMe?'#fff':'#d4dde3';cx.fillText(p.name,tx+56,my);
   cx.textAlign='right';cx.fillStyle=isW?GOLD:'#e8eef2';cx.fillText(p.k,tx+tw-52,my);cx.fillStyle='#84949f';cx.fillText(p.d,tx+tw-8,my);cx.restore()});
  // back-to-home button (DOM) sits right under the ranking
- const hb=$('home');hb.hidden=false;hb.textContent=won&&sim&&!net&&LV<2?'NEXT LEVEL':'BACK TO HOME';hb.style.top=Math.min(H-54,ty+6+list.length*(rh+3)+12)+'px';hb.style.opacity=cl((t-1.2)*3,0,1);hb.style.pointerEvents=t>1.2?'auto':'none';
+ const hb=$('home');hb.hidden=false;hb.textContent='BACK TO HOME';hb.style.top=Math.min(H-54,ty+6+list.length*(rh+3)+12)+'px';hb.style.opacity=cl((t-1.2)*3,0,1);hb.style.pointerEvents=t>1.2?'auto':'none';
  cx.textBaseline='alphabetic';cx.globalAlpha=1}
 function hudFx(m,now,W,H,F,dt){
  if(m&&m.al&&m.hp<30&&!snap.w&&now-beatT>850){beatT=now;sfx('heart',{j:0})}

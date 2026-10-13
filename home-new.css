@@ -41,24 +41,57 @@
 /* connection pill */
 .hs-cs{display:none;position:absolute;left:50%;bottom:2%;transform:translateX(-50%);align-items:center;gap:8px;padding:6px 14px;border:1px solid #ff5a4a88;border-radius:999px;background:#0a0f18e6;color:#ffb4ab;font:700 14px Inter,system-ui,sans-serif;cursor:pointer}
 .hs-cs[data-s="bad"]{display:flex}.hs-cs i{width:10px;height:10px;border-radius:50%;background:#ff5a4a}
-/* room popup */
-#pop{position:fixed;inset:0;z-index:50;display:flex;align-items:center;justify-content:center;background:#000a;animation:pf .15s}
+/* room popup — two cards side by side, each its own cropped art (room-create.png, room-join.png).
+   The art already paints the title, icon, field box and button; we lay transparent/invisible hit-areas
+   on top at the same relative position so the painted controls are the real controls. */
+#pop{position:fixed;inset:0;z-index:50;display:flex;align-items:center;justify-content:center;padding:16px;background:#000a;animation:pf .15s}
 #pop[hidden]{display:none}
 @keyframes pf{from{opacity:0}}
-.pcard{position:relative;width:min(380px,88vw);padding:22px 20px 20px;border-radius:16px;border:3px solid #e9a12a;background:linear-gradient(#0f2748,#061629);box-shadow:0 10px 40px #000a;text-align:center;animation:pp .18s cubic-bezier(.2,.9,.3,1.2)}
-@keyframes pp{from{transform:scale(.85)}}
-.pcard h2{margin:0 0 14px;color:#ffd067;font:700 28px Rajdhani,system-ui,sans-serif;letter-spacing:.12em}
-#pmain,#pcode{display:flex;flex-direction:column;gap:10px}
-#pcode[hidden],#pmain[hidden]{display:none}
-.pb{padding:13px;border:2px solid #ffd067;border-radius:10px;background:linear-gradient(#ffb62e,#e07d0a);color:#2a1500;font:700 22px Rajdhani,system-ui,sans-serif;letter-spacing:.08em;cursor:pointer;-webkit-tap-highlight-color:transparent;transition:transform .1s,filter .1s}
-.pb.alt{background:linear-gradient(#2a5fa8,#14325f);color:#fff;border-color:#6fb3ff}
-.pb:hover{filter:brightness(1.12)}.pb:active{transform:scale(.95);filter:brightness(1.35)}
-.px{position:absolute;top:8px;right:10px;width:34px;height:34px;border:0;border-radius:8px;background:#ffffff14;color:#fff;font-size:18px;cursor:pointer;transition:transform .1s}
-.px:active{transform:scale(.88);background:#ffffff33}
-#rm{padding:12px;border:2px solid #38c6ff;border-radius:10px;background:#030c1b;color:#fff;text-align:center;font:800 28px ui-monospace,Menlo,monospace;letter-spacing:.3em;text-transform:uppercase;outline:0}
-#rm::placeholder{font:600 18px Rajdhani,system-ui,sans-serif;letter-spacing:.1em;color:#8993a6}
-#rm.bad{animation:sk .35s;border-color:#ff5a4a}
+.pwrap{position:relative;display:flex;gap:3%;width:min(760px,96vw);animation:pp .18s cubic-bezier(.2,.9,.3,1.2)}
+@keyframes pp{from{transform:scale(.92);opacity:0}}
+.pcard{position:relative;flex:1 1 0;min-width:0;border-radius:22px;overflow:hidden;
+ background-repeat:no-repeat;background-size:100% 100%;background-position:center;
+ box-shadow:0 14px 44px #000b;aspect-ratio:782/1005}
+.pcard-create{background-image:url("room-create.png")}
+.pcard-join{background-image:url("room-join.png")}
+/* invisible hit-areas, positioned as % of the 782x1005 card art to match the painted field/button */
+.phit{position:absolute;left:13%;right:13%;border:0;background:none;outline:0}
+.phit-field{top:42.5%;height:13.5%}
+#menu .phit-input,#menu input.phit-input{top:42.5%;height:13.5%;padding:0 8%;margin:0;color:#fff;text-align:center;font:800 20px ui-monospace,Menlo,monospace;letter-spacing:.3em;text-transform:uppercase;caret-color:#8fd3ff;background:none;border:0;border-radius:0;box-shadow:none}
+#menu .phit-input::placeholder{color:transparent;opacity:0}
+.phit-input::placeholder{color:transparent}
+.phit-input.bad{animation:sk .35s}
 @keyframes sk{25%{transform:translateX(-8px)}75%{transform:translateX(8px)}}
+.pb{position:absolute;left:11%;right:11%;top:58.5%;height:20%;border:0;border-radius:14px;background:none;cursor:pointer;-webkit-tap-highlight-color:transparent;overflow:hidden}
+.pb:active{filter:brightness(1.3)}
+.px{position:absolute;top:8%;right:6%;z-index:2;width:10%;aspect-ratio:1;border:0;border-radius:8px;background:transparent;color:transparent;font-size:16px;cursor:pointer;transition:transform .1s;overflow:hidden}
+.px:active{transform:scale(.88)}
+/* shared ripple used by .pb / .px / .st-tab (JS-driven) */
+.pb .rip,.px .rip,.st-tab .rip{position:absolute;inset:0;overflow:hidden;border-radius:inherit;pointer-events:none}
+.pb .rip b,.px .rip b,.st-tab .rip b{position:absolute;width:140%;aspect-ratio:1;border-radius:50%;transform:translate(-50%,-50%) scale(0);background:radial-gradient(circle,#fffffff0,#ffffff00 70%);mix-blend-mode:screen;animation:rp .5s ease-out forwards}
+@media (max-width:560px){
+ .pwrap{flex-direction:column;gap:14px;width:min(320px,92vw)}
+}
+/* settings dialog: GENERAL / KEYBOARD tab bar + art backdrop per tab */
+.st-tabs{display:flex;gap:10px;width:100%;max-width:1240px;margin:0 auto 18px;padding:0}
+.st-tab{position:relative;overflow:hidden;display:flex;align-items:center;justify-content:center;gap:8px;flex:1 1 0;max-width:260px;
+ padding:13px 18px;border:2px solid #38587a;border-radius:12px;background:linear-gradient(#17242f,#0a131b);color:#9fb3cc;
+ font:700 15px Rajdhani,system-ui,sans-serif;letter-spacing:.14em;cursor:pointer;-webkit-tap-highlight-color:transparent;
+ transition:background .15s,border-color .15s,color .15s,transform .1s}
+.st-tab svg{width:18px;height:18px;fill:currentColor}
+.st-tab:active{transform:scale(.97)}
+.st-tab.on{color:#1a0d00;border-color:#ffd067;background:linear-gradient(180deg,#5aa4ff,#2a6fe0)}
+.st-tab.on svg{fill:#fff}
+.st-tab.on{color:#fff}
+/* art backdrop behind each tab's content, matching the uploaded mockups */
+#st .st-grid[data-tab]{position:relative;padding-top:18px}
+#st .st-grid[data-tab="general"]::before,
+#st .st-grid[data-tab="keyboard"]::before{
+ content:"";position:absolute;inset:-18px 0 0;z-index:-1;border-radius:24px;opacity:.16;pointer-events:none;
+ background-repeat:no-repeat;background-position:top center;background-size:100% auto}
+#st .st-grid[data-tab="general"]::before{background-image:url("settings-general.png")}
+#st .st-grid[data-tab="keyboard"]::before{background-image:url("settings-keyboard.png")}
+
 /* Portrait phone: no "rotate" screen on login/home; the whole screen is turned sideways instead */
 @media (orientation:portrait) and (pointer:coarse){
  #menu,#login{inset:auto!important;top:0!important;left:100vw!important;left:100dvw!important;width:100vh!important;width:100dvh!important;height:100vw!important;height:100dvw!important;transform-origin:0 0;transform:rotate(90deg)}

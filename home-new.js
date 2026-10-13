@@ -2,26 +2,39 @@
 var $=function(i){return document.getElementById(i)},mode='room';
 function sel(m){mode=m;$('mroom').classList.toggle('sel',m==='room');$('msolo').classList.toggle('sel',m==='solo')}
 sel('solo');
-/* press ripple + haptic on every home button */
-document.querySelector('.hs').addEventListener('pointerdown',function(e){
- var b=e.target.closest&&e.target.closest('.hb');if(!b)return;
+/* press ripple + haptic on every home button, and on the room-card / settings-tab buttons */
+function ripple(b,e){
  var r=b.getBoundingClientRect(),w=document.createElement('span');w.className='rip';
- var s=document.createElement('b');s.style.left=(e.clientX-r.left)/r.width*100+'%';s.style.top=(e.clientY-r.top)/r.height*100+'%';
+ var x=(e.clientX!=null?e.clientX:r.left+r.width/2),y=(e.clientY!=null?e.clientY:r.top+r.height/2);
+ var s=document.createElement('b');s.style.left=(x-r.left)/r.width*100+'%';s.style.top=(y-r.top)/r.height*100+'%';
  w.appendChild(s);b.appendChild(w);setTimeout(function(){w.remove()},600);
- try{navigator.vibrate&&navigator.vibrate(8)}catch(x){}});
+ try{navigator.vibrate&&navigator.vibrate(8)}catch(x){}}
+document.querySelector('.hs').addEventListener('pointerdown',function(e){
+ var b=e.target.closest&&e.target.closest('.hb');if(!b)return;ripple(b,e)});
+document.addEventListener('pointerdown',function(e){
+ var b=e.target.closest&&e.target.closest('#pop .pb,#pop .px,#st .st-tab');if(!b)return;ripple(b,e)});
+/* settings dialog: GENERAL / KEYBOARD tabs */
+(function(){
+ var tabs=document.querySelectorAll('#st .st-tab');
+ function showTab(name){
+  tabs.forEach(function(t){var on=t.dataset.tab===name;t.classList.toggle('on',on);t.setAttribute('aria-selected',on?'true':'false')});
+  document.querySelectorAll('#st .st-grid[data-tab]').forEach(function(g){g.hidden=g.dataset.tab!==name});
+ }
+ tabs.forEach(function(t){t.onclick=function(){showTab(t.dataset.tab)}});
+ showTab('general');
+})();
 $('mroom').onclick=function(){sel('room')};
 $('msolo').onclick=function(){sel('solo')};
-/* START */
-function openPop(){$('pmain').hidden=false;$('pcode').hidden=true;$('pop').hidden=false}
+/* START — room popup now shows CREATE ROOM and JOIN ROOM side by side at once */
+function openPop(){$('pop').hidden=false}
 $('mstart').onclick=function(){if(mode==='solo')$('solo').click();else openPop()};
 function closePop(){$('pop').hidden=true}
 $('pclose').onclick=closePop;
 $('pop').addEventListener('pointerdown',function(e){if(e.target===$('pop'))closePop()});
 $('pcreate').onclick=function(){closePop();$('host').click()};
-$('pjoin').onclick=function(){$('pmain').hidden=true;$('pcode').hidden=false;setTimeout(function(){$('rm').focus()},50)};
-$('pback').onclick=function(){$('pmain').hidden=false;$('pcode').hidden=true};
 $('pgo').onclick=function(){var r=$('rm');if(r.value.length<5){r.classList.remove('bad');void r.offsetWidth;r.classList.add('bad');r.focus();return}closePop();$('join').click()};
 $('rm').addEventListener('keydown',function(e){e.stopPropagation();if(e.key==='Enter'){e.preventDefault();$('pgo').click()}if(e.key==='Escape')closePop()},true);
+addEventListener('keydown',function(e){if(e.key==='Escape'&&!$('pop').hidden)closePop()},true);
 /* profile: tap avatar to sign in with Google (when signed out) */
 $('pav').onclick=function(){if($('acc').dataset.s==='guest')$('acbtn').click()};
 var phImg=document.querySelector('#pav .pho img'),phSrc='',phOrig='';

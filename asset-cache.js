@@ -6,7 +6,7 @@
    asset's <img src> is swapped to a local blob: URL as soon as it's available. */
 (function(){
 'use strict';
-var ASSETS=['loading-bg.jpg','home-art2.jpg','lobby-bg.jpg','login-bg.jpg','victory-bg.png'];
+var ASSETS=['loading-1.jpg','loading-2.jpg','loading-3.jpg','loading-4.jpg','home-art2.jpg','lobby-bg.jpg','login-bg.jpg','victory-bg.png'];
 var DB='csk-assets',STORE='files',VER=1;
 function openDB(){return new Promise(function(res,rej){
  var r=indexedDB.open(DB,VER);
@@ -18,11 +18,14 @@ function idbGet(db,key){return new Promise(function(res){
 function idbSet(db,key,blob){return new Promise(function(res){
  var tx=db.transaction(STORE,'readwrite').objectStore(STORE).put(blob,key);
  tx.onsuccess=function(){res(1)};tx.onerror=function(){res(0)}})}
+var URLS={};
 function applySrc(name,url){
+ URLS[name]=url;
  var els=document.querySelectorAll('img[src="'+name+'"]');
  for(var i=0;i<els.length;i++)els[i].src=url}
 
 window.CSKAssets={
+ url:function(name){return URLS[name]||''},
  preload:function(onProgress){
   var done=0,total=ASSETS.length;
   function tick(){done++;onProgress&&onProgress(done,total)}

@@ -35,7 +35,7 @@ function build(snap,myId){
  if(!(document.documentElement.requestFullscreen||document.documentElement.webkitRequestFullscreen))fb.hidden=true;
  fit()}
 window.VS={
- show(snap,myId){if(on)return;on=1;try{const d=document;if(d.fullscreenElement||d.webkitFullscreenElement)(d.exitFullscreen||d.webkitExitFullscreen).call(d)}catch(e){}pi=0;build(snap,myId);root.classList.add('on');
+ show(snap,myId){if(on)return;on=1;pi=0;build(snap,myId);root.classList.add('on');
   pt=setInterval(()=>{const pv=document.getElementById('vs-pv');if(!pv)return;pv.classList.add('f');setTimeout(()=>{pi=(pi+1)%PROV.length;pv.textContent=PROV[pi];pv.classList.remove('f')},500)},5000)},
  hide(){if(!on)return;on=0;clearInterval(pt);root&&root.classList.remove('on')}};
 })();

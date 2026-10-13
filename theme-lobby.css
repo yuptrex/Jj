@@ -8,7 +8,7 @@
 
    lobby-bg.jpg   = waiting-room art with the placeholder text
                     ("Player 01", "20 PLAYERS...", "START") painted out
-   loading-bg.jpg = loading art with the "72%" bar fill painted out
+   (loading screen art + styles now live in loading.css / loading-1..4.jpg)
    =========================================================== */
 
 /* ---------------------------------------------------------- waiting room */
@@ -117,49 +117,7 @@
 /* ---------- dimmed Create Room button when logged out ---------- */
 #host.lob-locked-btn{opacity:.5;filter:grayscale(.4)}
 
-/* ---------------------------------------------------------- loading screen */
-#csk-splash{position:fixed;inset:0;z-index:999;display:block;background:#05080b;overflow:hidden;
-  container-type:size;transition:opacity .5s ease,visibility .5s}
-#csk-splash::before{content:none}
-#csk-splash.csk-hide{opacity:0;visibility:hidden;pointer-events:none}
-#csk-splash .sp-bg{position:absolute;inset:0;width:100%;height:100%;object-fit:fill;display:block;pointer-events:none;-webkit-user-drag:none}
-#csk-splash .sp-ui{position:absolute;inset:0;--u:min(100cqw / 1983, 100cqh / 793)}
-/* real progress bar laid exactly inside the painted frame (artwork px 690,565 596x29) */
-#csk-splash .sp-track{position:absolute;overflow:hidden;
-  left:calc(690 / 1983 * 100%);top:calc(565 / 793 * 100%);width:calc(596 / 1983 * 100%);height:calc(29 / 793 * 100%)}
-#csk-splash .sp-fill{position:absolute;left:0;top:0;bottom:0;width:0;
-  background:linear-gradient(180deg,#fff08a 0,#ffd21f 22%,#ffb000 55%,#ff8a00 100%);
-  clip-path:polygon(0 0,100% 0,calc(100% - 9px) 100%,0 100%);
-  box-shadow:inset 0 1px 0 #fff8c8}
-#csk-splash .sp-pct{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
-  font-family:var(--csk-font-display);font-weight:700;letter-spacing:.06em;color:#fff;line-height:1;
-  font-size:calc(var(--u) * 26);-webkit-text-stroke:calc(var(--u) * 3) #3a2200;paint-order:stroke fill;
-  text-shadow:0 1px 3px #000a}
-
-/* ---------------------------------------------------------- live tip (the painted tip was removed from loading-bg.jpg) */
-/* sits where the painted tip used to be (artwork px: x 560-1423, y 681-705) */
-.sp-tip{position:absolute;left:calc(560 / 1983 * 100%);width:calc(863 / 1983 * 100%);top:calc(681 / 793 * 100%);height:calc(24 / 793 * 100%);
-  display:flex;align-items:center;justify-content:center;text-align:center;white-space:nowrap;overflow:hidden;
-  font-family:var(--csk-font-body,Inter,system-ui,sans-serif);font-weight:500;letter-spacing:.01em;color:#fff;
-  font-size:calc(var(--u) * 17.5);line-height:1;text-shadow:0 1px 3px #000,0 0 calc(var(--u) * 8) #000;
-  transition:opacity .24s ease;pointer-events:none}
-
-/* ---------------------------------------------------------- reusable loader (every screen switch) */
-#csk-load{position:fixed;inset:0;z-index:990;display:block;background:#05080b;overflow:hidden;container-type:size;
-  opacity:0;visibility:hidden;pointer-events:none;transition:opacity .28s ease,visibility .28s}
-#csk-load.on{opacity:1;visibility:visible;pointer-events:auto}   /* while up it also swallows taps, so nothing double-fires */
-#csk-load[hidden]{display:none}
-#csk-load .sp-bg{position:absolute;inset:0;width:100%;height:100%;object-fit:fill;display:block;pointer-events:none;-webkit-user-drag:none}
-#csk-load .sp-ui{position:absolute;inset:0;--u:min(100cqw / 1983, 100cqh / 793)}
-#csk-load .sp-track{position:absolute;overflow:hidden;
-  left:calc(690 / 1983 * 100%);top:calc(565 / 793 * 100%);width:calc(596 / 1983 * 100%);height:calc(29 / 793 * 100%)}
-#csk-load .sp-fill{position:absolute;left:0;top:0;bottom:0;width:0;
-  background:linear-gradient(180deg,#fff08a 0,#ffd21f 22%,#ffb000 55%,#ff8a00 100%);
-  clip-path:polygon(0 0,100% 0,calc(100% - 9px) 100%,0 100%);box-shadow:inset 0 1px 0 #fff8c8}
-#csk-load .sp-pct{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
-  font-family:var(--csk-font-display);font-weight:700;letter-spacing:.06em;color:#fff;line-height:1;
-  font-size:calc(var(--u) * 26);-webkit-text-stroke:calc(var(--u) * 3) #3a2200;paint-order:stroke fill;text-shadow:0 1px 3px #000a}
-/* the splash needs --u for the tip font size too (it already defines it on .sp-ui) */
+/* (loading screen styles moved to loading.css) */
 
 /* ---------------------------------------------------------- host: tap a player -> small popup with KICK OUT */
 .lob-pick{cursor:pointer}
