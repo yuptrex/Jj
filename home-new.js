@@ -4,7 +4,7 @@ function sel(m){mode=m;$('mroom').classList.toggle('sel',m==='room');$('msolo').
 sel('solo');
 /* press ripple + haptic on every home button */
 document.querySelector('.hs').addEventListener('pointerdown',function(e){
- var b=e.target.closest&&e.target.closest('.hb,.zb');if(!b)return;
+ var b=e.target.closest&&e.target.closest('.hb,.zb');if(!b||b.id==='pav')return;
  var r=b.getBoundingClientRect(),w=document.createElement('span');w.className='rip';
  var s=document.createElement('b');s.style.left=(e.clientX-r.left)/r.width*100+'%';s.style.top=(e.clientY-r.top)/r.height*100+'%';
  w.appendChild(s);b.appendChild(w);setTimeout(function(){w.remove()},600);
