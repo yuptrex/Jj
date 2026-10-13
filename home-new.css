@@ -72,25 +72,20 @@
 @media (max-width:560px){
  .pwrap{flex-direction:column;gap:14px;width:min(320px,92vw)}
 }
-/* settings dialog: GENERAL / KEYBOARD tab bar + art backdrop per tab */
-.st-tabs{display:flex;gap:10px;width:100%;max-width:1240px;margin:0 auto 18px;padding:0}
-.st-tab{position:relative;overflow:hidden;display:flex;align-items:center;justify-content:center;gap:8px;flex:1 1 0;max-width:260px;
- padding:13px 18px;border:2px solid #38587a;border-radius:12px;background:linear-gradient(#17242f,#0a131b);color:#9fb3cc;
- font:700 15px Rajdhani,system-ui,sans-serif;letter-spacing:.14em;cursor:pointer;-webkit-tap-highlight-color:transparent;
- transition:background .15s,border-color .15s,color .15s,transform .1s}
-.st-tab svg{width:18px;height:18px;fill:currentColor}
-.st-tab:active{transform:scale(.97)}
-.st-tab.on{color:#1a0d00;border-color:#ffd067;background:linear-gradient(180deg,#5aa4ff,#2a6fe0)}
-.st-tab.on svg{fill:#fff}
-.st-tab.on{color:#fff}
-/* art backdrop behind each tab's content, matching the uploaded mockups */
-#st .st-grid[data-tab]{position:relative;padding-top:18px}
-#st .st-grid[data-tab="general"]::before,
-#st .st-grid[data-tab="keyboard"]::before{
- content:"";position:absolute;inset:-18px 0 0;z-index:-1;border-radius:24px;opacity:.16;pointer-events:none;
- background-repeat:no-repeat;background-position:top center;background-size:100% auto}
-#st .st-grid[data-tab="general"]::before{background-image:url("settings-general.png")}
-#st .st-grid[data-tab="keyboard"]::before{background-image:url("settings-keyboard.png")}
+/* settings dialog — full art backdrop (per tab), real controls laid on top transparent/dimmed */
+#st{background-repeat:no-repeat;background-position:top center;background-size:100% auto;background-color:#06090d}
+#st[data-tab="general"]{background-image:url("settings-general.png")}
+#st[data-tab="keyboard"]{background-image:url("settings-keyboard.png")}
+#st .st-top{opacity:0;pointer-events:none;height:0;overflow:hidden;margin:0}
+#st .st-done{position:fixed;top:clamp(14px,2.4vw,34px);right:clamp(14px,2.4vw,34px);z-index:5;width:54px;height:54px;padding:0;
+ border-radius:50%;background:transparent;border:0;color:transparent;box-shadow:none;pointer-events:auto}
+.st-tabs{position:relative;z-index:2;display:flex;gap:10px;width:100%;max-width:1240px;margin:0 auto;padding:0;height:0;overflow:visible}
+.st-tab{position:absolute;top:calc(13.5vw * 0 + 11%);width:30%;max-width:300px;height:7%;left:9%;
+ overflow:hidden;border:0;border-radius:12px;background:transparent;color:transparent;cursor:pointer;-webkit-tap-highlight-color:transparent}
+#st-tab-keyboard{left:41%}
+#st .st-grid[data-tab]{position:relative;z-index:1;padding-top:19%}
+#st .st-grid[hidden]{display:none}
+#st .st-card{background:linear-gradient(180deg,#121b24f2,#0b1319f2)}
 
 /* Portrait phone: no "rotate" screen on login/home; the whole screen is turned sideways instead */
 @media (orientation:portrait) and (pointer:coarse){

@@ -17,6 +17,7 @@ document.addEventListener('pointerdown',function(e){
 (function(){
  var tabs=document.querySelectorAll('#st .st-tab');
  function showTab(name){
+  document.getElementById('st').dataset.tab=name;
   tabs.forEach(function(t){var on=t.dataset.tab===name;t.classList.toggle('on',on);t.setAttribute('aria-selected',on?'true':'false')});
   document.querySelectorAll('#st .st-grid[data-tab]').forEach(function(g){g.hidden=g.dataset.tab!==name});
  }
