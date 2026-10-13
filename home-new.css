@@ -95,3 +95,11 @@ input,textarea{-webkit-user-select:text;user-select:text}
 .zc.out{animation:zfo .2s ease forwards;pointer-events:none}
 @keyframes zfi{from{opacity:0}to{opacity:1}}
 @keyframes zfo{from{opacity:1}to{opacity:0}}
+
+/* ===== living art: gems + sword magic ===== */
+.gem{position:absolute;aspect-ratio:1;transform:translate(-50%,-50%);border-radius:50%;pointer-events:none;z-index:3;mix-blend-mode:screen;opacity:0;
+ background:radial-gradient(circle,#fff6 0,#ff7a8acc 18%,#ff2a4a77 45%,#ff102000 72%);animation:gemP 4.4s ease-in-out infinite}
+@keyframes gemP{0%,100%{opacity:0;scale:.8}50%{opacity:.95;scale:1.12}}
+.swf{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:1}
+body.noanim .gem{animation:none;opacity:.2}
+@media (prefers-reduced-motion:reduce){.gem{animation:none;opacity:.25}.swf{display:none}}
