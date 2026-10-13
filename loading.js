@@ -29,32 +29,29 @@ var TIPS=[
  'Ready up fast: the host can only start once everyone else is ready.'
 ];
 
-/* ---------- random loading art ----------
-   Four scenes (loading-1..4.jpg). Each time a loader appears one is picked at random, never the same one
-   twice in a row (the last pick is remembered across page loads too). x = horizontal focus used when the
-   screen is narrower than the art, so the important part (knights, castle) is the part that stays visible. */
+/* ---------- loading art ----------
+   Four scenes (ld-*.jpg, 1984x793). The first-boot splash is ALWAYS the black & white one; every loader after
+   that picks randomly from the other three, never the same one twice in a row.
+   x = horizontal focus (0..1) used when the screen is narrower than the art. bar = the painted progress
+   bar's inner rectangle in image pixels [x,y,w,h]: the live fill is laid exactly over it. */
 var ART=[
- {f:'loading-1.jpg',x:'22%'},
- {f:'loading-2.jpg',x:'35%'},
- {f:'loading-3.jpg',x:'22%'},
- {f:'loading-4.jpg',x:'40%'}
+ {f:'ld-bw.jpg',   x:.5,bar:[681,550,597,28]},
+ {f:'ld-night.jpg',x:.5,bar:[693,562,605,27]},
+ {f:'ld-day.jpg',  x:.5,bar:[691,566,613,27]},
+ {f:'ld-dusk.jpg', x:.5,bar:[691,566,613,27]}
 ];
-var lastArt=-1;
-try{var sv=parseInt(localStorage.getItem('csk-load-last'),10);if(sv>=0&&sv<ART.length)lastArt=sv}catch(e){}
+var lastArt=0;
 function pickArt(){
- var i=Math.random()*ART.length|0;
- if(ART.length>1&&i===lastArt)i=(i+1+(Math.random()*(ART.length-1)|0))%ART.length;
- lastArt=i;
- try{localStorage.setItem('csk-load-last',String(i))}catch(e){}
- return ART[i]}
+ var pool=[];for(var k=1;k<ART.length;k++)if(k!==lastArt)pool.push(k);
+ lastArt=pool[Math.random()*pool.length|0];
+ return ART[lastArt]}
 function setArt(img,a){
  if(!img||!a)return;
- var url=(window.CSKAssets&&CSKAssets.url&&CSKAssets.url(a.f))||a.f;   /* local cached copy when we have one */
- img.style.setProperty('--ox',a.x);
+ var url=(window.CSKAssets&&CSKAssets.url&&CSKAssets.url(a.f))||a.f,st=img.parentNode;   /* local cached copy when we have one */
+ if(st&&st.style){st.style.setProperty('--oxn',a.x);st.style.setProperty('--bx',a.bar[0]);st.style.setProperty('--by',a.bar[1]);st.style.setProperty('--bw',a.bar[2]);st.style.setProperty('--bh',a.bar[3])}
  img.src=url}
 window.CSKLoadArt={files:ART.map(function(a){return a.f}),pick:pickArt,set:setArt};
-/* the first-boot splash art is chosen now (this file loads in <head>) so it can be preloaded straight away */
-var first=pickArt();
+var first=ART[0];
 window.CSKLoadArt.first=first;
 try{var pl=document.createElement('link');pl.rel='preload';pl.as='image';pl.href=first.f;pl.setAttribute('fetchpriority','high');document.head.appendChild(pl)}catch(e){}
 
