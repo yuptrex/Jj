@@ -9,7 +9,9 @@
     [1150,104,1206,134,'flag'],[1103,175,1135,192,'flag'],[1008,200,1055,224,'flag'],
     [1214,230,1254,250,'flag'],[898,318,930,332,'flag'],[1402,284,1434,300,'flag'],[702,476,758,498,'flag']
   ];
-  var img=new Image(); img.onload=start; img.src=bg.getAttribute('src');
+  /* the home art's src is set by boot-gate.js (after login, or at DOMContentLoaded for returning players): wait for it instead of reading it once */
+function whenSrc(cb){if(bg.getAttribute('src'))return cb();var mo=new MutationObserver(function(){if(bg.getAttribute('src')){mo.disconnect();cb()}});mo.observe(bg,{attributes:true,attributeFilter:['src']})}
+  var img=new Image(); img.onload=start; whenSrc(function(){img.src=bg.getAttribute('src')});
   function isWater(r,g,b){return (b>175&&g>110&&r<g-15)||(r>170&&g>190&&b>210)}
   function isRed(r,g,b){return r>150&&g<100&&b<110}
   function isBan(r,g,b){return r>150&&b<130&&r>g+25}

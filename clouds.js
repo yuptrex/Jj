@@ -11,6 +11,8 @@
    {p:[1445,200,1470,170,1500,155,1545,150,1575,160,1570,185,1545,200,1500,206],a:7,T:24,f:.8,r:5},
    {p:[1315,232,1340,208,1380,200,1410,215,1405,240,1370,252,1330,250],a:6,T:19,f:2.4,r:4}
   ];
+  /* the home art's src is set by boot-gate.js (after login, or at DOMContentLoaded for returning players): wait for it instead of reading it once */
+function whenSrc(cb){if(bg.getAttribute('src'))return cb();var mo=new MutationObserver(function(){if(bg.getAttribute('src')){mo.disconnect();cb()}});mo.observe(bg,{attributes:true,attributeFilter:['src']})}
   function blur(a,w,h,r){ /* separable box blur on Float32Array */
     var t=new Float32Array(w*h),x,y,s,k,n=2*r+1;
     for(y=0;y<h;y++){s=0;for(k=-r;k<=r;k++)s+=a[y*w+Math.min(w-1,Math.max(0,k))];
@@ -52,7 +54,7 @@
           ctx.putImageData(c.o,c.x0,c.y0)}
       }
       requestAnimationFrame(frame)};
-    img.src=bg.getAttribute('src');
+    whenSrc(function(){img.src=bg.getAttribute('src')});
   }
   if(document.readyState==='complete')start();else addEventListener('load',start);
 })();

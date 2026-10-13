@@ -1478,10 +1478,10 @@ function attach(){if(attached)return true;if(!initAuth())return false;attached=t
   if(hint){hint=null;['ar-acct','ar-stats','ar-base','ar-cs'].forEach(LD);base=Z();setS(Z())}   /* saved session expired: continue as guest */
   user=null;note='';ui()}});return true}
 function initAuth(){if(auth)return true;try{const d=window.fbInit&&window.fbInit();if(!d||!window.firebase||!firebase.auth)return false;db=d;auth=firebase.auth();return true}catch(e){return false}}
-function fail(e){busy=false;try{CSKBoot.release()}catch(x){}const c=e&&e.code||'';if(c=='auth/popup-closed-by-user'||c=='auth/cancelled-popup-request'){ui();return}flash('Login failed',1)}
+function fail(e){busy=false;const c=e&&e.code||'';if(c=='auth/popup-closed-by-user'||c=='auth/cancelled-popup-request'){ui();return}flash('Login failed',1)}
 async function signIn(){if(busy)return;if(!attach()){flash('Login failed',1);return}
- busy=true;ui();try{CSKBoot.hold()}catch(x){}const pr=new firebase.auth.GoogleAuthProvider();pr.setCustomParameters({prompt:'select_account'});
- try{if(window.CSK_REDIRECT){await auth.signInWithRedirect(pr);return}await auth.signInWithPopup(pr)}
+ busy=true;ui();const pr=new firebase.auth.GoogleAuthProvider();pr.setCustomParameters({prompt:'select_account'});
+ try{await auth.signInWithPopup(pr)}
  catch(e){if(e&&e.code=='auth/popup-blocked'){try{await auth.signInWithRedirect(pr);return}catch(x){e=x}}fail(e)}}
 async function signOut(){if(busy)return;busy=true;ui('Saving…');
  await Promise.race([push(),sleep(2500)]);

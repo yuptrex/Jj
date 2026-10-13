@@ -47,13 +47,13 @@ function show(){if(done)return;root.hidden=false;root.classList.remove('lg-out')
 function hide(){root.classList.add('lg-out');document.body.classList.remove('lg-open');setTimeout(function(){if(done)root.hidden=true},380)}
 
 /* ---------- sign in ---------- */
-function fail(e){setBusy(false);try{CSKBoot.release()}catch(x){}var c=e&&e.code||'';if(c==='auth/popup-closed-by-user'||c==='auth/cancelled-popup-request'){say('');return}say(errText(e),'bad')}
+function fail(e){setBusy(false);var c=e&&e.code||'';if(c==='auth/popup-closed-by-user'||c==='auth/cancelled-popup-request'){say('');return}say(errText(e),'bad')}
 async function google(){
  if(busy||needTerms())return;
  var a=getAuth();if(!a){say('Could not reach the server. Check your connection or ad-blocker, then reload.','bad');return}
- setBusy(true);say('Choose your account in the new tab\u2026');try{CSKBoot.hold()}catch(x){}
+ setBusy(true);say('Opening Google\u2026');
  var p=new firebase.auth.GoogleAuthProvider();p.setCustomParameters({prompt:'select_account'});
- try{if(window.CSK_REDIRECT){say('Signing in\u2026');await a.signInWithRedirect(p);return}await a.signInWithPopup(p);say('Signing in\u2026')}
+ try{await a.signInWithPopup(p);say('Signing in\u2026')}
  catch(e){if(e&&e.code==='auth/popup-blocked'){try{await a.signInWithRedirect(p);return}catch(x){e=x}}fail(e)}}
 async function emailLogin(){
  if(busy)return;if(needTerms())return;
