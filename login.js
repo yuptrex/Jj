@@ -52,6 +52,7 @@ async function google(){
  if(busy||needTerms())return;
  var a=getAuth();if(!a){say('Could not reach the server. Check your connection or ad-blocker, then reload.','bad');return}
  setBusy(true);say('Choose your account in the new tab\u2026');try{CSKBoot.hold()}catch(x){}
+ try{if(CSKBoot.tab(function(){fail({code:'auth/popup-closed-by-user'})}))return}catch(x){}   /* separate browser tab; this tab waits */
  var p=new firebase.auth.GoogleAuthProvider();p.setCustomParameters({prompt:'select_account'});
  try{if(window.CSK_REDIRECT){say('Signing in\u2026');await a.signInWithRedirect(p);return}await a.signInWithPopup(p);say('Signing in\u2026')}
  catch(e){if(e&&e.code==='auth/popup-blocked'){try{await a.signInWithRedirect(p);return}catch(x){e=x}}fail(e)}}

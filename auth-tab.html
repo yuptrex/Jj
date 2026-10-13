@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Sign in</title>
+<style>html,body{margin:0;height:100%;background:#05080b;color:#cfd8e3;font:600 16px system-ui,sans-serif}body{display:flex;align-items:center;justify-content:center;text-align:center;padding:24px;box-sizing:border-box}</style>
+</head><body><div id="m">Opening Google…</div>
+<!-- Opened by the game in a normal browser tab. It only forwards to Google's account chooser, then closes itself and returns you to the game tab. -->
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script>
+(function(){
+var CFG={apiKey:"AIzaSyAcI5-kdznUDJ0j_R3baEXZ99mErRhlfUY",authDomain:"cloud-3eacc.firebaseapp.com",databaseURL:"https://cloud-3eacc-default-rtdb.asia-southeast1.firebasedatabase.app",projectId:"cloud-3eacc",storageBucket:"cloud-3eacc.firebasestorage.app",messagingSenderId:"294209249530",appId:"1:294209249530:web:3619cee4052f8749aa2943"};
+var m=document.getElementById('m'),KEY='csk-auth-tab';
+function say(t){m.textContent=t}
+function ss(k,v){try{if(v===undefined)return sessionStorage.getItem(k);if(v===null)sessionStorage.removeItem(k);else sessionStorage.setItem(k,v)}catch(e){return null}}
+function closeSoon(ms,msg){setTimeout(function(){try{window.close()}catch(e){}setTimeout(function(){say(msg||'You can close this tab and return to the game.')},400)},ms)}
+function back(){say('Signed in. Returning to the game…');try{window.opener&&window.opener.focus()}catch(e){}closeSoon(600,'Signed in. You can close this tab and return to the game.')}
+function fail(e){ss(KEY,null);var c=e&&e.code||'';say(c==='auth/unauthorized-domain'?'This web address is not authorised for sign-in yet.':'Sign-in failed. Close this tab and try again.');closeSoon(2600)}
+try{
+ if(!window.firebase)throw {code:'load'};
+ firebase.initializeApp(CFG);var auth=firebase.auth();
+ auth.getRedirectResult().then(function(r){
+  var started=ss(KEY)==='1';
+  if(r&&r.user){ss(KEY,null);back();return}
+  if(auth.currentUser&&started){ss(KEY,null);back();return}
+  if(started){ss(KEY,null);say('Sign-in cancelled.');closeSoon(700);return}      /* came back without signing in */
+  ss(KEY,'1');
+  var p=new firebase.auth.GoogleAuthProvider();p.setCustomParameters({prompt:'select_account'});
+  return auth.signInWithRedirect(p)
+ }).catch(fail)
+}catch(e){fail(e)}
+})();
+</script></body></html>
