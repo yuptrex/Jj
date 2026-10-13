@@ -13,8 +13,9 @@
   /* browser can't do it (e.g. iPhone Safari): hide the button, nothing else to do */
   if(!req){ if(btn) btn.hidden=true; return; }
 
+  var allowed=!!window.CSK_AUTHED;   /* no full screen on sign-in / sign-up: only after a successful login */
   function enter(){
-    if(isFs()) return;
+    if(!allowed||isFs()) return;
     try{
       var p=req.call(de);
       var coarse=window.matchMedia&&window.matchMedia('(pointer:coarse)').matches;
@@ -50,6 +51,7 @@
   });
   var GEST=['pointerup','mouseup','touchend','click','keydown'];
   function onGesture(e){
+    if(!allowed) return;
     if(e&&e.type==='keydown'&&e.key==='Escape') return;
     if(isFs()||userOff()){ if(isFs()) stopGest(); return; }
     enter();
@@ -88,7 +90,15 @@
   /* waiting room: READY / START / the countdown overlay are real taps too, so full screen is requested there as well
      (the 15 s countdown itself is not a tap, so it can't ask) */
   hook('lob-ready');hook('lob-start');hook('lob-count');
-  window.CSKFullscreen={enter:enter,isFs:isFs};
+  /* fit: whenever the viewport changes (entering/leaving full screen, rotation, browser bars), refit every screen to the new size so no gaps remain */
+  var fitT=[];
+  function refit(){fitT.forEach(clearTimeout);fitT=[0,120,400,900].map(function(d){return setTimeout(function(){
+    var de2=document.documentElement;de2.style.setProperty('--vw',innerWidth+'px');de2.style.setProperty('--vh',innerHeight+'px');
+    window.dispatchEvent(new Event('resize'))},d)})}
+  ['fullscreenchange','webkitfullscreenchange','MSFullscreenChange'].forEach(function(n){document.addEventListener(n,refit)});
+  window.addEventListener('orientationchange',refit);
+  if(window.visualViewport) window.visualViewport.addEventListener('resize',function(){var de2=document.documentElement;de2.style.setProperty('--vw',innerWidth+'px');de2.style.setProperty('--vh',innerHeight+'px')});
+  window.CSKFullscreen={enter:enter,isFs:isFs,allow:function(){allowed=true;if(!userOff()) enter();}};
   /* Create Room: skip when signed-out/locked or busy (the click will just be rejected) */
   hook('host',function(el){ return !el.disabled&&!el.classList.contains('lob-locked-btn'); });
   /* Join: only when a 5-character room code has been typed */

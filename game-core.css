@@ -9,7 +9,7 @@ button{width:100%;padding:11px;font-size:15px;font-weight:700;border:0;border-ra
 button.s{background:#2a3846;color:var(--tx)}button.s.on{background:var(--ac);color:#1a1200}
 #pz{position:fixed;top:10px;left:calc(50% + 160px);width:36px;height:36px;padding:0;margin:0;z-index:7;border-radius:9px;background:#18212bd9;color:#fff;border:1px solid #2f4252;font-size:13px;letter-spacing:-2px}#pz[hidden]{display:none}
 #pm{position:fixed;inset:0;z-index:15;display:flex;background:#000b;padding:14px;overflow:auto;touch-action:pan-y}#pm[hidden]{display:none}#pm h1{font-size:30px}#pn{min-height:14px}
-#ed{position:fixed;inset:0;z-index:20;background:#0b1015;touch-action:none}#ed[hidden]{display:none}#ec{position:absolute;inset:0;cursor:default}
+#ed{position:fixed;inset:0;z-index:200;background:#0b1015;touch-action:none}#ed[hidden]{display:none}#ec{position:absolute;inset:0;cursor:default}
 #ep{position:absolute;left:50%;top:8px;transform:translateX(-50%);display:flex;gap:10px 14px;align-items:center;flex-wrap:wrap;justify-content:center;background:#18212bee;border:1px solid #2a3846;border-radius:12px;padding:8px 14px;font-size:12px;max-width:96vw}
 #ep label{display:flex;gap:6px;align-items:center;color:var(--mu)}#ep input[type=range]{width:110px;margin:0;padding:0;border:0}#ep button{width:auto;margin:0;padding:8px 14px;font-size:12px}#ep b{color:var(--ac)}#en{color:var(--tx)}input:focus-visible,button:focus-visible{outline:3px solid var(--ac);outline-offset:2px}
 #kf{position:fixed;top:58px;right:10px;z-index:5;font-size:13px;display:flex;flex-direction:column;align-items:flex-end;gap:4px;pointer-events:none}

@@ -6,7 +6,7 @@
 (function(){
 'use strict';
 var BUILD='v21';   /* bump when any asset file changes, so old cached copies are dropped */
-var ASSETS=['ld-bw.jpg','ld-night.jpg','ld-day.jpg','ld-dusk.jpg','home-art2.jpg','lobby-bg.jpg','login-bg.jpg','victory-bg.png',
+var ASSETS=['pause-panel.webp','btn-attack.webp','btn-bomb.webp','btn-reload.webp','btn-dash.webp','btn-shield.webp','ld-bw.jpg','ld-night.jpg','ld-day.jpg','ld-dusk.jpg','home-art2.jpg','lobby-bg.jpg','login-bg.jpg','victory-bg.png',
  'setup-card.png','setup-btn.png','login-btn-go.png','login-btn-google.png','rm-main.webp','rm-create.webp','rm-join.webp','hero-bg.svg'];
 /* Stage 1 (before login): only what the splash + sign-in screen show. Stage 2 (after login): the rest.
    On low-end devices the big screens (victory, lobby, room cards) are not pre-downloaded at all; they load on demand. */

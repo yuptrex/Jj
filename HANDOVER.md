@@ -466,3 +466,12 @@ The arena (floor, walls, pickups, bullets, particles, lighting) was dull; it is 
   Back to Home's page reload does not force it back on; the full-screen button turns it on again.
 - Note: Back to Home still reloads the page, and every browser drops full screen on reload, so the first tap after returning home
   re-enters full screen.
+
+---
+
+## v36 — image pause menu, sprite buttons, login-gated full screen
+- Pause menu is now `pause-panel.webp` with invisible hotspots (`#pzr` resume, `#pzl` layout, `#pzh` exit, `#pzs` settings -> opens `#st`); `pause.css`. Pressed = scale + glow + vibrate.
+- In-game touch buttons use `btn-attack/dash/reload/shield/bomb.webp` (shield = turret). Rope stays drawn. Press feedback in `spr()` (game.js); dash/turret dim on cooldown; armed bomb pulses.
+- Full screen only after login (`CSKLogin.ready()` -> `CSKFullscreen.allow()`); never on sign-in/sign-up. On every fullscreen/rotation change the page re-fits (resize nudge) so no gaps.
+
+- v37: Settings > Edit layout now opens the editor (`window.CSKEditLayout`; the old code clicked a hidden button that only listens for pointerdown). Save & Close pushes the layout to `users/<uid>/layout` at once; it is restored on login on any device (newest edit wins). Firebase rules must allow read/write of `users/<uid>/layout`.

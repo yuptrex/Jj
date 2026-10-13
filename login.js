@@ -103,7 +103,7 @@ tm.addEventListener('click',function(e){if(e.target===tm)tm.hidden=true});
 
 /* ---------- called by game.js ---------- */
 var hasPassword=function(u){return !!(u&&u.providerData&&u.providerData.some(function(p){return p.providerId==='password'}))};
-function ready(){done=true;setBusy(false);say('');try{CSKBoot.ensure()}catch(e){}hide()}
+function ready(){window.CSK_AUTHED=1;try{window.CSKFullscreen&&CSKFullscreen.allow()}catch(e){}done=true;setBusy(false);say('');try{CSKBoot.ensure()}catch(e){}hide()}
 
 /* The popup. o = {user, claim, cleanName, nameRe, needName, needPw, name}. Resolves with the locked name ('' if none). */
 function ask(o){return new Promise(function(resolve){
