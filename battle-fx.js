@@ -26,8 +26,9 @@ const PAL={
   trim:'#ffc24d',trim2:'#fff0b8',flame:'#ffa63a',
   zones:['#ffb347','#5be37a','#58b8ff','#ff6b8a','#ffd84a'],
   fly:'#d9ff7a',flyN:46,rise:0,
-  grassA:'#1f9a4c',grassB:'#8cffaa',rock:'#6f86a6',rockHi:'#c9dbf2',water1:'#46d2ff',water2:'#1b69c0',
-  crys:['#59e8ff','#b07bff','#ff7ad1'],bar:'#ffc24d',cloud:.15,vig:[6,10,22]},
+  grassA:'#1f9a4c',grassB:'#8cffaa',rock:'#6f86a6',rockHi:'#c9dbf2',water1:'#46d2ff',water2:'#1b69c0',water3:'#d8f6ff',
+  crys:['#59e8ff','#b07bff','#ff7ad1'],bar:'#ffc24d',cloud:.15,vig:[6,10,22],
+  pole:'#6b5a3a',flag:['#ffc24d','#ff6b8a','#58b8ff'],flagHi:'#fff6d8'},
  2:{ // VIOLET WASTES: plum stone, magma glow, magenta trim
   fh:276,fs:30,fl:26,groove:'#0f0718',
   patch:[['#c24ee8',.46],['#ff8a3c',.38],['#3fd4cc',.32]],
@@ -35,8 +36,9 @@ const PAL={
   trim:'#ff6fb1',trim2:'#ffd0e6',flame:'#ff7a3a',
   zones:['#ff6fb1','#ffb347','#8f7bff','#4fe0d0','#ffd84a'],
   fly:'#ffb066',flyN:54,rise:1,
-  grassA:'#b8561e',grassB:'#ffb066',rock:'#5a4a73',rockHi:'#c3a9ec',water1:'#ffd04a',water2:'#ff4a1a',
-  crys:['#ff6fb1','#ffb347','#8f7bff'],bar:'#ff6fb1',cloud:.18,vig:[10,4,16]}
+  grassA:'#b8561e',grassB:'#ffb066',rock:'#5a4a73',rockHi:'#c3a9ec',water1:'#ffd04a',water2:'#ff4a1a',water3:'#fff0c0',
+  crys:['#ff6fb1','#ffb347','#8f7bff'],bar:'#ff6fb1',cloud:.18,vig:[10,4,16],
+  pole:'#3a2a30',flag:['#ff6fb1','#8f7bff','#4fe0d0'],flagHi:'#ffe0f0'}
 };
 const pal=()=>PAL[LV==2?2:1];
 
@@ -179,14 +181,49 @@ function decor(now,P,hw,hh,vis){
    cx.fillStyle=P.rockHi;cx.globalAlpha=.55;cx.beginPath();cx.ellipse(-4,-4,3.2,1.8,-.3,0,TAU);cx.fill();cx.globalAlpha=1;
    if(L2){cx.strokeStyle='#ff8a3c';cx.lineWidth=1.4;cx.globalAlpha=.55+.4*pulse(now,900,ph);cx.beginPath();cx.moveTo(-6,2);cx.lineTo(-1,0);cx.lineTo(3,4);cx.lineTo(8,1);cx.stroke();cx.globalAlpha=1}
    else{cx.fillStyle='#3fc46a';cx.beginPath();cx.ellipse(4,2,5,3,.4,0,TAU);cx.fill()}}
-  else if(k==2){ // pond (water) / magma pool
+  else if(k==2){ // pond (water) / magma pool - full flow: drifting current bands, travelling ripple rings, sparkle glints
    const g=cx.createRadialGradient(0,-2,2,0,0,28);g.addColorStop(0,P.water1);g.addColorStop(1,P.water2);
    if(L2&&!LQ()){cx.globalCompositeOperation='lighter';cx.globalAlpha=.45+.2*pulse(now,700,ph);cx.drawImage(glowSpr('#ff6a22'),-62,-48,124,96);cx.globalCompositeOperation='source-over';cx.globalAlpha=1}
-   cx.fillStyle=g;cx.beginPath();cx.ellipse(0,0,27,15,0,0,TAU);cx.fill();
-   cx.strokeStyle=L2?'#2a0a05':'rgba(210,245,255,.55)';cx.lineWidth=2.4;cx.stroke();
-   const q=(sw*.7+ph)%1;cx.globalAlpha=(1-q)*.6;cx.strokeStyle=L2?'#ffe08a':'#fff';cx.lineWidth=1.4;cx.beginPath();cx.ellipse(0,0,6+q*18,3.5+q*9,0,0,TAU);cx.stroke();cx.globalAlpha=1;
+   cx.save();cx.beginPath();cx.ellipse(0,0,27,15,0,0,TAU);cx.clip();
+   cx.fillStyle=g;cx.fillRect(-28,-16,56,32);
+   // flowing current bands sweeping across the surface (the actual "moving water" look)
+   for(let b=0;b<3;b++){
+    const bo=((sw*.55+ph*3+b/3)%1),bx=-30+bo*60;
+    cx.globalAlpha=(1-Math.abs(bo-.5)*2)*(L2?.30:.26);
+    cx.fillStyle=L2?P.water3:'rgba(255,255,255,.75)';
+    cx.beginPath();cx.ellipse(bx,Math.sin(b*2+ph)*3,10,4.2,.35,0,TAU);cx.fill()}
+   cx.globalAlpha=1;cx.restore();
+   cx.strokeStyle=L2?'#2a0a05':'rgba(210,245,255,.55)';cx.lineWidth=2.4;cx.beginPath();cx.ellipse(0,0,27,15,0,0,TAU);cx.stroke();
+   // two staggered outward ripple rings for continuous travelling motion
+   for(let ri=0;ri<2;ri++){
+    const q=((sw*.7+ph+ri*.5)%1);cx.globalAlpha=(1-q)*.6;cx.strokeStyle=L2?'#ffe08a':'#fff';cx.lineWidth=1.4;
+    cx.beginPath();cx.ellipse(0,0,6+q*18,3.5+q*9,0,0,TAU);cx.stroke()}
+   cx.globalAlpha=1;
    cx.fillStyle='rgba(255,255,255,.55)';cx.beginPath();cx.ellipse(-8+Math.sin(sw+ph)*3,-4,6,1.6,0,0,TAU);cx.fill();
-   if(L2){cx.fillStyle='#fff2a8';const b=(sw*1.3+ph)%1;cx.globalAlpha=1-b;cx.beginPath();cx.arc(Math.sin(ph*9)*10,4-b*8,2+b*3,0,TAU);cx.fill();cx.globalAlpha=1}}
+   if(L2){cx.fillStyle='#fff2a8';const b=(sw*1.3+ph)%1;cx.globalAlpha=1-b;cx.beginPath();cx.arc(Math.sin(ph*9)*10,4-b*8,2+b*3,0,TAU);cx.fill();cx.globalAlpha=1}
+   // drifting sparkle glints riding the current
+   cx.fillStyle=L2?'#ffdca0':'#fff';
+   for(let si=0;si<2;si++){const so=(sw*.4+ph*5+si*.5)%1,gx=-20+so*40,ga=Math.sin(so*Math.PI);cx.globalAlpha=ga*.8;cx.beginPath();cx.arc(gx,Math.cos(si*3+ph)*5,1.3,0,TAU);cx.fill()}
+   cx.globalAlpha=1}
+  else if(k==5){ // waving flag on a pole - sine-warped cloth so each vertical strip ripples at a different phase
+   const P2=now/1000*2.6+ph*4,FH2=16,FW=20,col=P.flag[((d.x|0)%3+3)%3];
+   cx.fillStyle='rgba(0,0,0,.30)';cx.beginPath();cx.ellipse(1,10,5,2.2,0,0,TAU);cx.fill();
+   cx.strokeStyle=P.pole;cx.lineWidth=2.6;cx.lineCap='round';cx.beginPath();cx.moveTo(0,11);cx.lineTo(0,-30);cx.stroke();
+   cx.fillStyle=P.pole;cx.beginPath();cx.arc(0,-31,1.6,0,TAU);cx.fill();
+   // waving banner: horizontal strips, each with its own phase offset, so the cloth ripples as it travels outward
+   const topY=-28,amp=2.6+Math.sin(ph*5)*.4;
+   cx.save();cx.translate(0,topY);
+   const rows=5,rh=(FH2)/rows;
+   for(let r=0;r<rows;r++){
+    const ty=r*rh-FH2/2,wA=Math.sin(P2-r*.75)*amp,wB=Math.sin(P2-r*.75+.9)*amp;
+    cx.fillStyle=col;cx.globalAlpha=.92;
+    cx.beginPath();cx.moveTo(0+wA*.2,ty);cx.lineTo(FW+wA,ty);cx.lineTo(FW+wB,ty+rh);cx.lineTo(0+wB*.2,ty+rh);cx.closePath();cx.fill();
+    cx.fillStyle=r%2?'rgba(0,0,0,.10)':'rgba(255,255,255,.16)';cx.beginPath();cx.moveTo(0+wA*.2,ty);cx.lineTo(FW+wA,ty);cx.lineTo(FW+wB,ty+rh);cx.lineTo(0+wB*.2,ty+rh);cx.closePath();cx.fill()}
+   cx.globalAlpha=1;
+   // emblem dot that rides the cloth's own wave so it doesn't float independently
+   const mt=.5,mWA=Math.sin(P2-mt*rows*.75)*amp;
+   cx.fillStyle=P.flagHi;cx.globalAlpha=.85;cx.beginPath();cx.arc(FW*.42+mWA,0,2.1,0,TAU);cx.fill();cx.globalAlpha=1;
+   cx.restore()}
   else if(k==3){ // bush with blossoms / glow-fungus
    const cs=L2?['#6b2d86','#a252c4','#d98cff']:['#1d7a3e','#2ea055','#55d27a'];
    cx.fillStyle='rgba(0,0,0,.3)';cx.beginPath();cx.ellipse(3,6,18,8,0,0,TAU);cx.fill();

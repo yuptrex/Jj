@@ -105,7 +105,7 @@ function setLevel(n){LV=n;SEED=n==1?1337:9001;for(const a of[WALLS,PKP,CHP,PKTY,
  CHP.push([2400,1600]);
  for(const qx of[0,1])for(const qy of[0,1]){for(const[x,y]of PB)PKP.push([qx?4800-x:x,qy?3200-y:y]);for(const[x,y]of CB)CHP.push([qx?4800-x:x,qy?3200-y:y])}
  ZN.push(...(n==2?[['OUTER RING',1200,800],['SALT FLATS',3600,800],['BONE YARD',1200,2400],['IRON GATE',3600,2400],['THE KEEP',2400,1250]]:[['DUST BOWL',1200,800],['GREEN ROW',3600,800],['STEEL YARD',1200,2400],['THE PIT',3600,2400],['PLAZA',2400,1100]]));
- for(let i=0;i<650;i++){const x=rng()*MW,y=rng()*MH,k=rng()*6|0,r=rng()*6.28,sc=.7+rng()*.8;if(!inWall(x,y))DEC.push({x,y,k,r,s:sc})}
+ for(let i=0;i<650;i++){const x=rng()*MW,y=rng()*MH,k=rng()*7|0,r=rng()*6.28,sc=.7+rng()*.8;if(!inWall(x,y))DEC.push({x,y,k,r,s:sc})}
  for(let i=0;i<70;i++)PAT.push({x:rng()*MW,y:rng()*MH,r:220+rng()*380,k:rng()*3|0});
  PKP.forEach((_,i)=>PKTY.push(['hp','smg','shield','shotgun','speed','rifle','hp','shield','smg'][i%9]));
  for(let i=0;i<30;i++){const ax=150+rng()*(MW-300),ay=150+rng()*(MH-300);for(let j=0;j<6;j++){const x=ax+(rng()-.5)*120,y=ay+(rng()-.5)*120;if(!inWall(x,y))CSP.push([x|0,y|0,1+(rng()*2|0)])}}
@@ -831,6 +831,7 @@ function render(dt,now){if(snap.lv&&snap.lv!=LV)setLevel(snap.lv);if(!sim&&net)n
   else if(d.k==2){cx.fillStyle='#1c3a52';cx.beginPath();cx.ellipse(0,0,26,14,0,0,6.28);cx.fill();cx.strokeStyle='#3a6a8a55';cx.lineWidth=2;cx.stroke()}
   else if(d.k==3){cx.fillStyle='#1b3324';for(const[x,y,r]of[[0,0,12],[10,4,9],[-9,5,8]]){cx.beginPath();cx.arc(x,y,r,0,6.28);cx.fill()}cx.fillStyle='#24462f';cx.beginPath();cx.arc(-2,-3,6,0,6.28);cx.fill()}
   else if(d.k==4){cx.strokeStyle='#ffb02e30';cx.lineWidth=5;cx.beginPath();cx.moveTo(-22,8);cx.lineTo(0,-8);cx.lineTo(22,8);cx.stroke()}
+  else if(d.k==5){cx.strokeStyle='#5a4a3a';cx.lineWidth=2;cx.beginPath();cx.moveTo(0,10);cx.lineTo(0,-28);cx.stroke();cx.fillStyle='#b23a3a88';cx.beginPath();cx.moveTo(0,-28);cx.lineTo(16,-24);cx.lineTo(0,-18);cx.closePath();cx.fill()}
   else{cx.strokeStyle='#3a4856';cx.lineWidth=3;cx.beginPath();cx.arc(0,0,14,0,6.28);cx.stroke();cx.beginPath();cx.moveTo(-14,0);cx.lineTo(14,0);cx.moveTo(0,-14);cx.lineTo(0,14);cx.stroke()}
   cx.restore()}
  cx.fillStyle='#ffffff0a';cx.font='bold 120px "Trebuchet MS",sans-serif';cx.textAlign='center';for(const z of ZN)cx.fillText(z[0],z[1],z[2]);
