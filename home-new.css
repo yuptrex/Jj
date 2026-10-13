@@ -102,3 +102,7 @@ input,textarea{-webkit-user-select:text;user-select:text}
 .swf{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:1}
 body.noanim .gem{animation:none;opacity:.2}
 @media (prefers-reduced-motion:reduce){.gem{animation:none;opacity:.25}.swf{display:none}}
+
+.lvl{position:absolute;overflow:hidden;border-radius:calc(14*var(--u));justify-content:flex-start!important;gap:0!important}
+.lvl .lvf{position:absolute;left:0;top:0;bottom:0;width:0;background:linear-gradient(#5be6ff,#14a9e8);transition:width .5s ease;box-shadow:0 0 calc(10*var(--u)) #38c6ff99}
+.lvl .lvt{position:relative;width:100%;text-align:center;color:#fff;font:700 calc(18*var(--u)) Rajdhani,system-ui,sans-serif;letter-spacing:.08em;text-shadow:0 1px 3px #000c,0 0 calc(6*var(--u)) #000a;white-space:nowrap}

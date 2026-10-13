@@ -85,7 +85,7 @@
  <div id="acc" data-s="guest" data-nudge="0">
   <button class="hb" id="pav" type="button" aria-label="Profile" style="--x:16;--y:22;--w:128;--h:128"><i class="face"></i><i class="pho"><img alt="" draggable="false" referrerpolicy="no-referrer" decoding="async"></i></button>
   <input id="nm" class="hs-name" maxlength="12" placeholder="Player" autocomplete="off" spellcheck="false" aria-label="Callsign" tabindex="-1"><div id="nmv" class="nmv"><span id="nmt">Player</span></div>
-  <div class="lvl" title="Locked for now"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 10V8a5 5 0 0 1 10 0v2h1.5a1.5 1.5 0 0 1 1.5 1.5v8a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 4 19.5v-8A1.5 1.5 0 0 1 5.5 10zm2 0h6V8a3 3 0 0 0-6 0z"/></svg>LOCKED</div>
+  <div class="lvl"></div>
  </div>
  <button class="hb" id="fsb" type="button" aria-label="Enter full screen" aria-pressed="false" style="--x:1430;--y:18;--w:97;--h:97"><i class="face"></i><svg class="fco" viewBox="0 0 24 24" aria-hidden="true"><path d="M9.5 4v5.5H4M20 9.5h-5.5V4M14.5 20v-5.5H20M4 14.5h5.5V20"/></svg></button>
  <button class="hb" id="stb" type="button" aria-label="Settings" style="--x:1550;--y:18;--w:100;--h:97"><i class="face"></i></button>
@@ -205,6 +205,6 @@ window.CSK_RELAY_URL="";</script>
 <script src="lobby-fx.js"></script>
 <script src="lobby.js"></script>
 <script src="login.js"></script>
-<script src="home-new.js"></script><script src="fx.js"></script><script>(function(){var b=document.getElementById("st-so"),a=document.getElementById("acc");function f(){b.hidden=!a||a.dataset.s==="guest"}f();new MutationObserver(f).observe(a,{attributes:true,attributeFilter:["data-s"]});b.onclick=function(){document.getElementById("stx").click();var x=document.getElementById("acbtn");if(x)x.click()}})()</script><script>(function(){var st=document.getElementById("st"),sx=st.querySelector(".sx");st.addEventListener("click",function(e){var b=e.target.closest("[data-t]");if(!b)return;sx.dataset.p=b.dataset.t;document.getElementById("sx-g").hidden=b.dataset.t!=="g";document.getElementById("sx-k").hidden=b.dataset.t!=="k"})})()</script>
+<script src="home-new.js"></script><script src="level.js"></script><script src="fx.js"></script><script>(function(){var b=document.getElementById("st-so"),a=document.getElementById("acc");function f(){b.hidden=!a||a.dataset.s==="guest"}f();new MutationObserver(f).observe(a,{attributes:true,attributeFilter:["data-s"]});b.onclick=function(){document.getElementById("stx").click();var x=document.getElementById("acbtn");if(x)x.click()}})()</script><script>(function(){var st=document.getElementById("st"),sx=st.querySelector(".sx");st.addEventListener("click",function(e){var b=e.target.closest("[data-t]");if(!b)return;sx.dataset.p=b.dataset.t;document.getElementById("sx-g").hidden=b.dataset.t!=="g";document.getElementById("sx-k").hidden=b.dataset.t!=="k"})})()</script>
 <script>window.__cskProg&&__cskProg(97)</script>
 </body></html>
