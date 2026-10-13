@@ -41,52 +41,36 @@
 /* connection pill */
 .hs-cs{display:none;position:absolute;left:50%;bottom:2%;transform:translateX(-50%);align-items:center;gap:8px;padding:6px 14px;border:1px solid #ff5a4a88;border-radius:999px;background:#0a0f18e6;color:#ffb4ab;font:700 14px Inter,system-ui,sans-serif;cursor:pointer}
 .hs-cs[data-s="bad"]{display:flex}.hs-cs i{width:10px;height:10px;border-radius:50%;background:#ff5a4a}
-/* room popup — two cards side by side, each its own cropped art (room-create.png, room-join.png).
-   The art already paints the title, icon, field box and button; we lay transparent/invisible hit-areas
-   on top at the same relative position so the painted controls are the real controls. */
-#pop{position:fixed;inset:0;z-index:50;display:flex;align-items:center;justify-content:center;padding:16px;background:#000a;animation:pf .15s}
-#pop[hidden]{display:none}
-@keyframes pf{from{opacity:0}}
-.pwrap{position:relative;display:flex;gap:3%;width:min(760px,96vw);animation:pp .18s cubic-bezier(.2,.9,.3,1.2)}
-@keyframes pp{from{transform:scale(.92);opacity:0}}
-.pcard{position:relative;flex:1 1 0;min-width:0;border-radius:22px;overflow:hidden;
- background-repeat:no-repeat;background-size:100% 100%;background-position:center;
- box-shadow:0 14px 44px #000b;aspect-ratio:782/1005}
-.pcard-create{background-image:url("room-create.png")}
-.pcard-join{background-image:url("room-join.png")}
-/* invisible hit-areas, positioned as % of the 782x1005 card art to match the painted field/button */
-.phit{position:absolute;left:13%;right:13%;border:0;background:none;outline:0}
-.phit-field{top:42.5%;height:13.5%}
-#menu .phit-input,#menu input.phit-input{top:42.5%;height:13.5%;padding:0 8%;margin:0;color:#fff;text-align:center;font:800 20px ui-monospace,Menlo,monospace;letter-spacing:.3em;text-transform:uppercase;caret-color:#8fd3ff;background:none;border:0;border-radius:0;box-shadow:none}
-#menu .phit-input::placeholder{color:transparent;opacity:0}
-.phit-input::placeholder{color:transparent}
-.phit-input.bad{animation:sk .35s}
+/* room popup: painted cards with real buttons/inputs on top */
+#pop{position:absolute;inset:0;z-index:50;display:flex;align-items:center;justify-content:center;background:#000b;animation:pf .18s}
+#pop[hidden]{display:none}#pop.closing{animation:pfo .16s forwards}
+@keyframes pf{from{opacity:0}}@keyframes pfo{to{opacity:0}}
+.zc{--bgurl:none;position:relative;flex:none;aspect-ratio:var(--W)/var(--H);width:min(86cqw,calc(84cqh*var(--W)/var(--H)),640px);container-type:inline-size;filter:drop-shadow(0 12px 28px #000c)}
+.zc.zs{width:min(80cqw,calc(84cqh*var(--W)/var(--H)),420px)}
+.zc[hidden]{display:none}
+.zc.in{animation:zin .3s cubic-bezier(.2,.9,.25,1.15)}
+.zc.out{animation:zout .16s ease-in forwards;pointer-events:none}
+@keyframes zin{from{opacity:0;transform:translateY(5%) scale(.82)}}
+@keyframes zout{to{opacity:0;transform:scale(.9)}}
+.zbg{position:absolute;inset:0;background:center/100% 100% no-repeat;pointer-events:none}
+.zb,.zi{position:absolute;left:calc(var(--x)/var(--W)*100%);top:calc(var(--y)/var(--H)*100%);width:calc(var(--w)/var(--W)*100%);height:calc(var(--h)/var(--H)*100%);margin:0;box-sizing:border-box}
+.zb{padding:0;border:0;background:none;cursor:pointer;outline:0;-webkit-tap-highlight-color:transparent;touch-action:manipulation;border-radius:10%/22%;transition:transform .12s cubic-bezier(.2,.8,.2,1)}
+.zb.zx{border-radius:22%}
+.zb .face{position:absolute;inset:0;border-radius:inherit;pointer-events:none;background-repeat:no-repeat;background-image:inherit;opacity:0;transition:filter .12s,opacity .08s;
+ background-size:calc(var(--W)/var(--w)*100%) calc(var(--H)/var(--h)*100%);background-position:calc(var(--x)/(var(--W) - var(--w))*100%) calc(var(--y)/(var(--H) - var(--h))*100%)}
+#pmain .face{background-image:url(rm-main.webp)}#pnew .face{background-image:url(rm-create.webp)}#pcode .face{background-image:url(rm-join.webp)}
+@media (hover:hover){.zb:hover .face{opacity:1;filter:brightness(1.18) saturate(1.15)}.zb:hover{transform:scale(1.025)}}
+.zb:active,.zb.is-down{transform:scale(.95) translateY(2%)}
+.zb:active .face,.zb.is-down .face{opacity:1;filter:brightness(1.45) saturate(1.2)}
+.zb:focus-visible{outline:2px solid #ffd067;outline-offset:2px}
+.zb .rip{position:absolute;inset:0;overflow:hidden;border-radius:inherit;pointer-events:none}
+.zb .rip b{position:absolute;width:30%;aspect-ratio:1;border-radius:50%;transform:translate(-50%,-50%) scale(0);background:radial-gradient(circle,#fffffff0,#ffffff00 70%);mix-blend-mode:screen;animation:rp .5s ease-out forwards}
+.zi{padding:0 2%;border:0;border-radius:6px;background:var(--c);color:#fff;outline:0;font:800 4.3cqw Rajdhani,system-ui,sans-serif;letter-spacing:.03em;text-transform:uppercase;transition:box-shadow .15s}
+.zi::placeholder{color:#9db6d6;opacity:1}
+.zi:focus{box-shadow:inset 0 -3px 0 #ffd067,0 0 12px #38c6ff88}
+#rm{text-align:center;letter-spacing:.3em;font-size:7cqw;padding-left:calc(2% + .3em)}
+#rm.bad,#rn.bad{animation:sk .35s;box-shadow:inset 0 -3px 0 #ff5a4a}
 @keyframes sk{25%{transform:translateX(-8px)}75%{transform:translateX(8px)}}
-.pb{position:absolute;left:11%;right:11%;top:58.5%;height:20%;border:0;border-radius:14px;background:none;cursor:pointer;-webkit-tap-highlight-color:transparent;overflow:hidden}
-.pb:active{filter:brightness(1.3)}
-.px{position:absolute;top:8%;right:6%;z-index:2;width:10%;aspect-ratio:1;border:0;border-radius:8px;background:transparent;color:transparent;font-size:16px;cursor:pointer;transition:transform .1s;overflow:hidden}
-.px:active{transform:scale(.88)}
-/* shared ripple used by .pb / .px / .st-tab (JS-driven) */
-.pb .rip,.px .rip,.st-tab .rip{position:absolute;inset:0;overflow:hidden;border-radius:inherit;pointer-events:none}
-.pb .rip b,.px .rip b,.st-tab .rip b{position:absolute;width:140%;aspect-ratio:1;border-radius:50%;transform:translate(-50%,-50%) scale(0);background:radial-gradient(circle,#fffffff0,#ffffff00 70%);mix-blend-mode:screen;animation:rp .5s ease-out forwards}
-@media (max-width:560px){
- .pwrap{flex-direction:column;gap:14px;width:min(320px,92vw)}
-}
-/* settings dialog — full art backdrop (per tab), real controls laid on top transparent/dimmed */
-#st{background-repeat:no-repeat;background-position:top center;background-size:100% auto;background-color:#06090d}
-#st[data-tab="general"]{background-image:url("settings-general.png")}
-#st[data-tab="keyboard"]{background-image:url("settings-keyboard.png")}
-#st .st-top{opacity:0;pointer-events:none;height:0;overflow:hidden;margin:0}
-#st .st-done{position:fixed;top:clamp(14px,2.4vw,34px);right:clamp(14px,2.4vw,34px);z-index:5;width:54px;height:54px;padding:0;
- border-radius:50%;background:transparent;border:0;color:transparent;box-shadow:none;pointer-events:auto}
-.st-tabs{position:relative;z-index:2;display:flex;gap:10px;width:100%;max-width:1240px;margin:0 auto;padding:0;height:0;overflow:visible}
-.st-tab{position:absolute;top:calc(13.5vw * 0 + 11%);width:30%;max-width:300px;height:7%;left:9%;
- overflow:hidden;border:0;border-radius:12px;background:transparent;color:transparent;cursor:pointer;-webkit-tap-highlight-color:transparent}
-#st-tab-keyboard{left:41%}
-#st .st-grid[data-tab]{position:relative;z-index:1;padding-top:19%}
-#st .st-grid[hidden]{display:none}
-#st .st-card{background:linear-gradient(180deg,#121b24f2,#0b1319f2)}
-
 /* Portrait phone: no "rotate" screen on login/home; the whole screen is turned sideways instead */
 @media (orientation:portrait) and (pointer:coarse){
  #menu,#login{inset:auto!important;top:0!important;left:100vw!important;left:100dvw!important;width:100vh!important;width:100dvh!important;height:100vw!important;height:100dvw!important;transform-origin:0 0;transform:rotate(90deg)}

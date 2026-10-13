@@ -268,7 +268,7 @@ function goOnlineLobby(mode){
   if(!requireLogin())return;
   L.show();busyUI(1);$('msg').textContent='';
   waitUp(9000).then(()=>withTimeout(createRoomCode(),9000)).then(c=>{
-   busyUI(0);enteredMatch=0;attachRoom(c,true);L.hide()
+   busyUI(0);enteredMatch=0;attachRoom(c,true);L.hide();try{const rn=String(window.CSK_ROOM_NAME||'').trim().slice(0,20);window.CSK_ROOM_NAME='';if(rn)FBdb.ref('rooms/'+c+'/name').set(rn).catch(()=>{})}catch(e){}
   }).catch(fail);
   return}
  const rc=cleanRoom($('rm').value);

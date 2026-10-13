@@ -2,40 +2,39 @@
 var $=function(i){return document.getElementById(i)},mode='room';
 function sel(m){mode=m;$('mroom').classList.toggle('sel',m==='room');$('msolo').classList.toggle('sel',m==='solo')}
 sel('solo');
-/* press ripple + haptic on every home button, and on the room-card / settings-tab buttons */
-function ripple(b,e){
- var r=b.getBoundingClientRect(),w=document.createElement('span');w.className='rip';
- var x=(e.clientX!=null?e.clientX:r.left+r.width/2),y=(e.clientY!=null?e.clientY:r.top+r.height/2);
- var s=document.createElement('b');s.style.left=(x-r.left)/r.width*100+'%';s.style.top=(y-r.top)/r.height*100+'%';
- w.appendChild(s);b.appendChild(w);setTimeout(function(){w.remove()},600);
- try{navigator.vibrate&&navigator.vibrate(8)}catch(x){}}
+/* press ripple + haptic on every home button */
 document.querySelector('.hs').addEventListener('pointerdown',function(e){
- var b=e.target.closest&&e.target.closest('.hb');if(!b)return;ripple(b,e)});
-document.addEventListener('pointerdown',function(e){
- var b=e.target.closest&&e.target.closest('#pop .pb,#pop .px,#st .st-tab');if(!b)return;ripple(b,e)});
-/* settings dialog: GENERAL / KEYBOARD tabs */
-(function(){
- var tabs=document.querySelectorAll('#st .st-tab');
- function showTab(name){
-  document.getElementById('st').dataset.tab=name;
-  tabs.forEach(function(t){var on=t.dataset.tab===name;t.classList.toggle('on',on);t.setAttribute('aria-selected',on?'true':'false')});
-  document.querySelectorAll('#st .st-grid[data-tab]').forEach(function(g){g.hidden=g.dataset.tab!==name});
- }
- tabs.forEach(function(t){t.onclick=function(){showTab(t.dataset.tab)}});
- showTab('general');
-})();
+ var b=e.target.closest&&e.target.closest('.hb,.zb');if(!b)return;
+ var r=b.getBoundingClientRect(),w=document.createElement('span');w.className='rip';
+ var s=document.createElement('b');s.style.left=(e.clientX-r.left)/r.width*100+'%';s.style.top=(e.clientY-r.top)/r.height*100+'%';
+ w.appendChild(s);b.appendChild(w);setTimeout(function(){w.remove()},600);
+ try{navigator.vibrate&&navigator.vibrate(8)}catch(x){}});
 $('mroom').onclick=function(){sel('room')};
 $('msolo').onclick=function(){sel('solo')};
-/* START — room popup now shows CREATE ROOM and JOIN ROOM side by side at once */
-function openPop(){$('pop').hidden=false}
+/* START */
+var cards=['pmain','pnew','pcode'],cur='pmain',pt=0;
+function show(id,instant){
+ cards.forEach(function(c){var el=$(c);
+  if(c===id){el.hidden=false;el.classList.remove('out');if(!instant){el.classList.remove('in');void el.offsetWidth;el.classList.add('in')}}
+  else if(!el.hidden){if(instant){el.hidden=true}else{el.classList.add('out');setTimeout(function(){if(cur!==c){el.hidden=true}el.classList.remove('out')},160)}}});
+ cur=id}
+function openPop(){clearTimeout(pt);$('pop').classList.remove('closing');cards.forEach(function(c){$(c).hidden=true;$(c).classList.remove('in','out')});$('pop').hidden=false;show('pmain')}
+function closePop(){if($('pop').hidden)return;$('pop').classList.add('closing');clearTimeout(pt);pt=setTimeout(function(){$('pop').hidden=true;$('pop').classList.remove('closing')},160)}
+function shut(){clearTimeout(pt);$('pop').hidden=true;$('pop').classList.remove('closing')}
 $('mstart').onclick=function(){if(mode==='solo')$('solo').click();else openPop()};
-function closePop(){$('pop').hidden=true}
 $('pclose').onclick=closePop;
+$('pnclose').onclick=$('pcclose').onclick=function(){show('pmain')};
 $('pop').addEventListener('pointerdown',function(e){if(e.target===$('pop'))closePop()});
-$('pcreate').onclick=function(){closePop();$('host').click()};
-$('pgo').onclick=function(){var r=$('rm');if(r.value.length<5){r.classList.remove('bad');void r.offsetWidth;r.classList.add('bad');r.focus();return}closePop();$('join').click()};
-$('rm').addEventListener('keydown',function(e){e.stopPropagation();if(e.key==='Enter'){e.preventDefault();$('pgo').click()}if(e.key==='Escape')closePop()},true);
-addEventListener('keydown',function(e){if(e.key==='Escape'&&!$('pop').hidden)closePop()},true);
+$('pcreate').onclick=function(){show('pnew');setTimeout(function(){$('rn').focus()},320)};
+$('pjoin').onclick=function(){show('pcode');setTimeout(function(){$('rm').focus()},320)};
+function bad(el){el.classList.remove('bad');void el.offsetWidth;el.classList.add('bad');el.focus()}
+/* CREATE: room name goes to the cloud (rooms/<code>/name) once the room code exists - see lobby.js */
+$('pmk').onclick=function(){var n=($('rn').value||'').trim().slice(0,20);
+ if(!n){var p=($('nm').value||'').trim()||'Player';n=(p+"'s Room").slice(0,20)}
+ window.CSK_ROOM_NAME=n;shut();$('host').click()};
+$('pgo').onclick=function(){var r=$('rm');if(r.value.length<5){bad(r);return}shut();$('join').click()};
+['rn','rm'].forEach(function(id){$(id).addEventListener('keydown',function(e){e.stopPropagation();
+ if(e.key==='Enter'){e.preventDefault();$(id==='rn'?'pmk':'pgo').click()}if(e.key==='Escape')show('pmain')},true)});
 /* profile: tap avatar to sign in with Google (when signed out) */
 $('pav').onclick=function(){if($('acc').dataset.s==='guest')$('acbtn').click()};
 var phImg=document.querySelector('#pav .pho img'),phSrc='',phOrig='';
