@@ -6,7 +6,7 @@
    asset's <img src> is swapped to a local blob: URL as soon as it's available. */
 (function(){
 'use strict';
-var ASSETS=['loading-bg.jpg','home-art.jpg','lobby-bg.jpg','victory-bg.png'];
+var ASSETS=['loading-bg.jpg','home-art.jpg','lobby-bg.jpg','login-bg.jpg','victory-bg.png'];
 var DB='csk-assets',STORE='files',VER=1;
 function openDB(){return new Promise(function(res,rej){
  var r=indexedDB.open(DB,VER);

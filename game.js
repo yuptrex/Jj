@@ -1335,7 +1335,13 @@ function lockName(n){locked=n;const nm=$('nm');
  if(nm){nm.value=n;nm.readOnly=true;nm.classList.add('cs-lock');nm.title='Your callsign is permanent';nm.setAttribute('aria-readonly','true')}
  LS('ar-name',n);const w=user||hint;if(w)LS('ar-cs',JSON.stringify({uid:w.uid,name:n}));
  const lb=document.querySelector('label[for="nm"]');if(lb&&!lb.querySelector('.cs-lk'))lb.insertAdjacentHTML('beforeend','<span class="cs-lk">'+LOCK_SVG+' PERMANENT</span>')}
-function claim(n){return new Promise((res,rej)=>{let fin=0;const t=setTimeout(()=>{if(!fin){fin=1;rej({code:'timeout'})}},9000);
+/* global unique-name index: callsigns/<lowercase name> = uid (first come, first served) */
+function nameKey(n){return String(n).toLowerCase().replace(/\s+/g,' ').trim().replace(/[.$#\[\]\/]/g,c=>'%'+c.charCodeAt(0).toString(16).toUpperCase())}
+function claimIdx(n){return new Promise((res,rej)=>{let fin=0;const t=setTimeout(()=>{if(!fin){fin=1;rej({code:'timeout'})}},9000);
+ try{db.ref('callsigns/'+nameKey(n)).transaction(cur=>(cur&&cur!==user.uid)?undefined:user.uid,(err,ok)=>{if(fin)return;fin=1;clearTimeout(t);if(err)rej(err);else if(!ok)rej({code:'name-taken'});else res()},false)}
+ catch(e){if(!fin){fin=1;clearTimeout(t);rej(e)}}})}
+async function claim(n){await claimIdx(n);return claim0(n)}
+function claim0(n){return new Promise((res,rej)=>{let fin=0;const t=setTimeout(()=>{if(!fin){fin=1;rej({code:'timeout'})}},9000);
  try{ref('callsign').transaction(cur=>cur&&cur.name?undefined:{name:n,t:Date.now()},(err,ok,snap)=>{if(fin)return;fin=1;clearTimeout(t);if(err)rej(err);else{const v=snap&&snap.val();res(v&&v.name?String(v.name):n)}},false)}
  catch(e){if(!fin){fin=1;clearTimeout(t);rej(e)}}})}
 function askName(pre){if(askP)return askP;
@@ -1383,7 +1389,7 @@ function askName(pre){if(askP)return askP;
 async function settleName(pv){let cs=null,den=false;
  try{cs=(await ref('callsign').once('value')).val()}catch(e){if(isDenied(e))den=true;else throw e}
  const hasName=!!(cs&&cs.name);
- if(hasName)lockName(cleanName(cs.name));
+ if(hasName){lockName(cleanName(cs.name));claimIdx(cleanName(cs.name)).catch(()=>{})}
  const L=window.CSKLogin;
  if(L){ /* new login screen: ask for a permanent name and a password (password = email/password login linked to this Google account) */
   if(den&&!hasName)console.warn('callsign: database rules do not allow users/<uid>/callsign');

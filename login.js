@@ -154,7 +154,7 @@ function ask(o){return new Promise(function(resolve){
    var c=e&&e.code||'',den=String(c).toUpperCase().indexOf('PERMISSION')>=0||/permission[_ ]denied/i.test(String(e&&e.message||''));
    if(needPw)pp.disabled=false;if(needName)nm.readOnly=false;
    check();
-   say2(needPw?pwFail(e):den?'Names cannot be saved yet: the database rules do not allow users/<uid>/callsign.':'Could not reach the server. Check your connection and try again.','bad');
+   say2(c==='name-taken'?'That name is already taken. Choose another.':needPw?pwFail(e):den?'Names cannot be saved yet: the database rules do not allow users/<uid>/callsign.':'Could not reach the server. Check your connection and try again.','bad');
    return}
   say2('Saved \u2713','ok');
   try{navigator.vibrate&&navigator.vibrate([12,40,18])}catch(e){}

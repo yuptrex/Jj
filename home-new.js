@@ -27,5 +27,8 @@ $('pav').onclick=function(){if($('acc').dataset.s==='guest')$('acbtn').click()};
 function photo(){var a=window.ARA&&ARA.account&&ARA.account(),ph=document.querySelector('#pav .ph'),acc=$('acc');
  if(a&&a.photo){ph.style.backgroundImage='url("'+a.photo+'")';acc.dataset.photo='1'}else acc.dataset.photo='0'}
 var mo=new MutationObserver(photo);mo.observe($('acc'),{attributes:true,attributeFilter:['data-s']});mo.observe($('acn'),{childList:true,characterData:true,subtree:true});
-setInterval(photo,2000);photo();
+var nm=$('nm'),nv=$('nmv'),nt=$('nmt'),last=null;
+function name(){var v=(nm.value||'').trim()||'Player';if(v===last)return;last=v;nt.textContent=v;nv.classList.remove('mq');
+ requestAnimationFrame(function(){var o=nt.offsetWidth-nv.clientWidth;if(o>2){nv.style.setProperty('--s',-(o+8)+'px');nv.style.setProperty('--d',Math.max(4,o/25)+'s');nv.classList.add('mq')}})}
+setInterval(function(){photo();name()},500);photo();name();
 })();

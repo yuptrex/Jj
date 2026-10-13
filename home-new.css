@@ -5,8 +5,7 @@
 .hs-bg{position:absolute;inset:0;width:100%;height:100%;object-fit:fill;pointer-events:none;-webkit-user-drag:none}
 .hs-ui,#acc{position:absolute;inset:0}
 #acc{pointer-events:none}#acc>*{pointer-events:auto}
-#login{display:none!important}
-.hb,.hs-name,.lvl{position:absolute;left:calc(var(--x)/1672*100%);top:calc(var(--y)/941*100%);width:calc(var(--w)/1672*100%);height:calc(var(--h)/941*100%);margin:0;box-sizing:border-box}
+.hb,.nmv,.lvl{position:absolute;left:calc(var(--x)/1672*100%);top:calc(var(--y)/941*100%);width:calc(var(--w)/1672*100%);height:calc(var(--h)/941*100%);margin:0;box-sizing:border-box}
 .hb{padding:0;border:0;background:none;cursor:pointer;-webkit-tap-highlight-color:transparent;touch-action:manipulation;outline:0;border-radius:calc(18*var(--u));
  --bgw:calc(1672/var(--w)*100%);--bgh:calc(941/var(--h)*100%);--bgx:calc(var(--x)/(1672 - var(--w))*100%);--bgy:calc(var(--y)/(941 - var(--h))*100%);
  transition:transform .12s cubic-bezier(.2,.8,.2,1)}
@@ -22,14 +21,15 @@
 .hb.sel{box-shadow:0 0 0 calc(3*var(--u)) #ffd067,0 0 calc(22*var(--u)) #ffb02ecc}
 .hb.sel .face{opacity:1;filter:brightness(1.12) saturate(1.1)}
 /* profile */
-#pav .ph{position:absolute;inset:6% 6%;border-radius:calc(12*var(--u));background:#0c1a2e center/cover no-repeat;display:none}
+#pav .ph{position:absolute;left:13.3%;top:18.8%;width:71.9%;height:66.4%;background:#0c1a2e center/cover no-repeat;display:none;clip-path:polygon(5% 0,95% 0,100% 5%,100% 95%,95% 100%,5% 100%,0 95%,0 5%)}
 #acc[data-photo="1"] #pav .ph{display:block}
-.hs-name{--x:186;--y:56;--w:262;--h:46;padding:0 1%;border:0;border-radius:0;background:#061629;color:#fff;text-align:left;
- font:700 calc(34*var(--u)) Rajdhani,system-ui,sans-serif;outline:0;text-overflow:ellipsis;box-shadow:none}
-.hs-name::placeholder{color:#fff;opacity:1}
-.hs-name:focus{box-shadow:inset 0 calc(-3*var(--u)) 0 #ffb02e}
-.hs-name[readonly]{cursor:default;box-shadow:none}
-.lvl{--x:244;--y:108;--w:210;--h:30;display:flex;align-items:center;justify-content:center;gap:calc(8*var(--u));background:#07182b;color:#9fb3cc;
+#menu #nm{display:none!important}
+.nmv{--x:156;--y:50;--w:276;--h:42;display:flex;align-items:center;overflow:hidden;pointer-events:none!important;color:#fff;font:700 calc(32*var(--u)) Rajdhani,system-ui,sans-serif;text-shadow:0 1px 0 #000a}
+.nmv span{display:inline-block;white-space:nowrap}
+.nmv.mq{justify-content:flex-start;-webkit-mask-image:linear-gradient(90deg,#000 88%,transparent);mask-image:linear-gradient(90deg,#000 88%,transparent)}
+.nmv.mq span{animation:mq var(--d,6s) linear infinite alternate}
+@keyframes mq{0%,15%{transform:translateX(0)}85%,100%{transform:translateX(var(--s))}}
+.lvl{--x:214;--y:101;--w:216;--h:28;display:flex;align-items:center;justify-content:center;gap:calc(8*var(--u));background:#07182b;color:#9fb3cc;
  font:700 calc(20*var(--u)) Rajdhani,system-ui,sans-serif;letter-spacing:.12em;pointer-events:none!important}
 .lvl svg{height:60%;fill:currentColor}
 /* full-screen: show "exit" icon over the art when on */
@@ -57,4 +57,7 @@
 #rm::placeholder{font:600 18px Rajdhani,system-ui,sans-serif;letter-spacing:.1em;color:#8993a6}
 #rm.bad{animation:sk .35s;border-color:#ff5a4a}
 @keyframes sk{25%{transform:translateX(-8px)}75%{transform:translateX(8px)}}
-@media (orientation:portrait) and (pointer:coarse){body:has(#menu:not([style*="none"])) #rot{display:flex}}
+/* Portrait phone: no "rotate" screen on login/home; the whole screen is turned sideways instead */
+@media (orientation:portrait) and (pointer:coarse){
+ #menu,#login{inset:auto!important;top:0!important;left:100vw!important;left:100dvw!important;width:100vh!important;width:100dvh!important;height:100vw!important;height:100dvw!important;transform-origin:0 0;transform:rotate(90deg)}
+}
