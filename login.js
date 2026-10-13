@@ -125,9 +125,13 @@ function ask(o){return new Promise(function(resolve){
  if(!needPw){pp.disabled=true;pp.placeholder='Password already set'}
  function nameErr(){if(!needName)return '';var n=o.cleanName(nm.value);if(!n)return nm.value?'Name needs at least 3 characters.':'';return n.length<3?'Name needs at least 3 characters.':!o.nameRe.test(n)?'Name: letters, numbers, spaces and . _ - only.':''}
  function pwErr(){if(!needPw)return '';return pp.value&&pp.value.length<6?'Password needs at least 6 characters.':''}
- function valid(){var n=!needName||(o.cleanName(nm.value).length>=3&&o.nameRe.test(o.cleanName(nm.value)));var p=!needPw||pp.value.length>=6;return n&&p}
- function check(){var e=nameErr()||pwErr();if(!working)say2(e||HINT,e?'bad':'');var ok=valid()&&!working;btn.classList.toggle('is-off',!ok);btn.classList.toggle('on',ok);btn.setAttribute('aria-disabled',ok?'false':'true')}
- nm.addEventListener('input',check);pp.addEventListener('input',check);
+ var avail=null,availFor='',availT=0,availSeq=0;
+ function nameOk(){if(!needName)return true;var c=o.cleanName(nm.value);return c.length>=3&&o.nameRe.test(c)}
+ function valid(){var p=!needPw||pp.value.length>=6;if(!nameOk()||!p)return false;if(needName&&o.free&&avail===false&&availFor===o.cleanName(nm.value).toLowerCase())return false;return true}
+ function lookup(){clearTimeout(availT);avail=null;if(!needName||!o.free||!nameOk())return;var n=o.cleanName(nm.value),seq=++availSeq;availFor=n.toLowerCase();
+  availT=setTimeout(function(){if(!working)say2('Checking name\u2026','');o.free(n).then(function(ok){if(seq!==availSeq||working)return;avail=ok;if(ok===false)say2('That name is already taken. Choose another.','bad');else if(ok===true)say2('Name is available \u2713','ok');check()})},350)}
+ function check(){var e=nameErr()||pwErr();if(!working){if(e)say2(e,'bad');else if(needName&&avail===false&&availFor===o.cleanName(nm.value).toLowerCase())say2('That name is already taken. Choose another.','bad');else if(!(needName&&avail===true&&availFor===o.cleanName(nm.value).toLowerCase()))say2(HINT,'')}var ok=valid()&&!working;btn.classList.toggle('is-off',!ok);btn.classList.toggle('on',ok);btn.setAttribute('aria-disabled',ok?'false':'true')}
+ nm.addEventListener('input',function(){check();lookup()});pp.addEventListener('input',check);
  [nm,pp].forEach(function(i){i.addEventListener('keydown',function(e){if(e.key==='Enter'){e.preventDefault();btn.click()}})});
  q('#sp-eye').addEventListener('click',function(){var on=pp.type==='password';pp.type=on?'text':'password';this.classList.toggle('on',on);this.setAttribute('aria-pressed',on);this.setAttribute('aria-label',on?'Hide password':'Show password')});
  q('#sp-out').addEventListener('click',function(){var b=$('acbtn');if(b)b.click();else{try{auth&&auth.signOut()}catch(e){}location.reload()}});

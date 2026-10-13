@@ -9,7 +9,7 @@
 .hb{padding:0;border:0;background:none;cursor:pointer;-webkit-tap-highlight-color:transparent;touch-action:manipulation;outline:0;border-radius:calc(18*var(--u));
  --bgw:calc(1672/var(--w)*100%);--bgh:calc(941/var(--h)*100%);--bgx:calc(var(--x)/(1672 - var(--w))*100%);--bgy:calc(var(--y)/(941 - var(--h))*100%);
  transition:transform .12s cubic-bezier(.2,.8,.2,1)}
-.hb .face{position:absolute;inset:0;border-radius:inherit;pointer-events:none;background:url(home-art.jpg) no-repeat;background-size:var(--bgw) var(--bgh);background-position:var(--bgx) var(--bgy);opacity:0;transition:filter .12s,opacity .08s}
+.hb .face{position:absolute;inset:0;border-radius:inherit;pointer-events:none;background:url(home-art2.jpg) no-repeat;background-size:var(--bgw) var(--bgh);background-position:var(--bgx) var(--bgy);opacity:0;transition:filter .12s,opacity .08s}
 @media (hover:hover){.hb:hover .face{opacity:1;filter:brightness(1.18) saturate(1.15)}.hb:hover{transform:scale(1.03)}}
 .hb:active,.hb.is-down{transform:scale(.95) translateY(2%)}
 .hb:active .face,.hb.is-down .face{opacity:1;filter:brightness(1.45) saturate(1.2)}
@@ -21,8 +21,10 @@
 .hb.sel{box-shadow:0 0 0 calc(3*var(--u)) #ffd067,0 0 calc(22*var(--u)) #ffb02ecc}
 .hb.sel .face{opacity:1;filter:brightness(1.12) saturate(1.1)}
 /* profile */
-#pav .ph{position:absolute;left:13.3%;top:18.8%;width:71.9%;height:66.4%;background:#0c1a2e center/cover no-repeat;display:none;clip-path:polygon(5% 0,95% 0,100% 5%,100% 95%,95% 100%,5% 100%,0 95%,0 5%)}
-#acc[data-photo="1"] #pav .ph{display:block}
+/* Slot interior measured from the art (flood-fill): x36 y48 w86 h83 inside the 128x128 button at (16,22). Chamfered corners match the frame. */
+#pav .pho{position:absolute;left:15.625%;top:20.3125%;width:67.1875%;height:64.84375%;display:none;overflow:hidden;background:#0c1a2e;clip-path:polygon(6% 0,94% 0,100% 6%,100% 94%,94% 100%,6% 100%,0 94%,0 6%)}
+#pav .pho img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center 30%;display:block;pointer-events:none;-webkit-user-drag:none}
+#acc[data-photo="1"] #pav .pho{display:block}
 #menu #nm{display:none!important}
 .nmv{--x:156;--y:50;--w:276;--h:42;display:flex;align-items:center;overflow:hidden;pointer-events:none!important;color:#fff;font:700 calc(32*var(--u)) Rajdhani,system-ui,sans-serif;text-shadow:0 1px 0 #000a}
 .nmv span{display:inline-block;white-space:nowrap}

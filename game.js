@@ -1336,11 +1336,17 @@ function lockName(n){locked=n;const nm=$('nm');
  LS('ar-name',n);const w=user||hint;if(w)LS('ar-cs',JSON.stringify({uid:w.uid,name:n}));
  const lb=document.querySelector('label[for="nm"]');if(lb&&!lb.querySelector('.cs-lk'))lb.insertAdjacentHTML('beforeend','<span class="cs-lk">'+LOCK_SVG+' PERMANENT</span>')}
 /* global unique-name index: callsigns/<lowercase name> = uid (first come, first served) */
-function nameKey(n){return String(n).toLowerCase().replace(/\s+/g,' ').trim().replace(/[.$#\[\]\/]/g,c=>'%'+c.charCodeAt(0).toString(16).toUpperCase())}
+function nameKey(n){let s=String(n);try{s=s.normalize('NFKC')}catch(e){}return s.toLowerCase().replace(/[\s._\-]+/g,' ').trim().replace(/[.$#\[\]\/]/g,c=>'%'+c.charCodeAt(0).toString(16).toUpperCase())}
+const RESERVED=['player','guest','admin','moderator','csk','bot','system','server'];
+/* live check for the name popup: true = free (or already yours) */
+function nameFree(n){return new Promise(res=>{const k=nameKey(n);if(RESERVED.indexOf(k)>=0)return res(false);let fin=0;const t=setTimeout(()=>{if(!fin){fin=1;res(null)}},6000);
+ try{db.ref('callsigns/'+k).once('value',s=>{if(fin)return;fin=1;clearTimeout(t);const v=s.val();res(!v||(user&&v===user.uid))},()=>{if(!fin){fin=1;clearTimeout(t);res(null)}})}catch(e){if(!fin){fin=1;clearTimeout(t);res(null)}}})}
 function claimIdx(n){return new Promise((res,rej)=>{let fin=0;const t=setTimeout(()=>{if(!fin){fin=1;rej({code:'timeout'})}},9000);
  try{db.ref('callsigns/'+nameKey(n)).transaction(cur=>(cur&&cur!==user.uid)?undefined:user.uid,(err,ok)=>{if(fin)return;fin=1;clearTimeout(t);if(err)rej(err);else if(!ok)rej({code:'name-taken'});else res()},false)}
  catch(e){if(!fin){fin=1;clearTimeout(t);rej(e)}}})}
-async function claim(n){await claimIdx(n);return claim0(n)}
+async function claim(n){if(RESERVED.indexOf(nameKey(n))>=0)throw {code:'name-taken'};await claimIdx(n);const got=await claim0(n);
+ if(got&&nameKey(got)!==nameKey(n)){try{db.ref('callsigns/'+nameKey(n)).transaction(c=>c===user.uid?null:undefined)}catch(e){}}
+ return got}
 function claim0(n){return new Promise((res,rej)=>{let fin=0;const t=setTimeout(()=>{if(!fin){fin=1;rej({code:'timeout'})}},9000);
  try{ref('callsign').transaction(cur=>cur&&cur.name?undefined:{name:n,t:Date.now()},(err,ok,snap)=>{if(fin)return;fin=1;clearTimeout(t);if(err)rej(err);else{const v=snap&&snap.val();res(v&&v.name?String(v.name):n)}},false)}
  catch(e){if(!fin){fin=1;clearTimeout(t);rej(e)}}})}
@@ -1394,7 +1400,7 @@ async function settleName(pv){let cs=null,den=false;
  if(L){ /* new login screen: ask for a permanent name and a password (password = email/password login linked to this Google account) */
   if(den&&!hasName)console.warn('callsign: database rules do not allow users/<uid>/callsign');
   else{const needPw=!L.hasPassword(user);
-   if(!hasName||needPw){const n=await L.ask({user:user,claim:claim,cleanName:cleanName,nameRe:NAME_RE,needName:!hasName,needPw:needPw,name:hasName?locked:''});if(n)lockName(n)}}
+   if(!hasName||needPw){const n=await L.ask({user:user,claim:claim,free:nameFree,cleanName:cleanName,nameRe:NAME_RE,needName:!hasName,needPw:needPw,name:hasName?locked:''});if(n)lockName(n)}}
   L.ready();return}
  if(hasName)return;
  if(den){console.warn('callsign: database rules do not allow users/<uid>/callsign');return}
