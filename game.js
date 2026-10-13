@@ -1589,7 +1589,8 @@ ap()})();
 const ROWS=[['down','Move down','↓'],['right','Move right','→'],['dash','Dash','➖'],['swap','Swap / pick up gun','🔫'],['bomb','Bomb / trigger','💣'],['up1','Upgrade 1 · Damage','⬆'],['up3','Upgrade 3 · Magazine','⏫'],['board','Scoreboard (hold)','🏆'],['mute','Mute','🔊'],['up','Move up','↑'],['left','Move left','←'],['fire','Fire (auto-aim)','⚙'],['reload','Reload','⟳'],['turret','Sentry turret','♜'],['rope','Grapple rope','🪝'],['up2','Upgrade 2 · Fire rate','🔥'],['up4','Upgrade 4 · Reload','⟳'],['pause','Pause','⏸']];
 let cur=null,endAt=0;
 function draw(){const el=g('kg');if(!el)return;
- el.innerHTML='<div class="sr"><div class="sl"><b><i>⚔</i>Aim / fire</b></div><div class="kb2"><kbd>Mouse</kbd></div></div>'+ROWS.map(([a,l,ic])=>'<div class="sr"><div class="sl"><b><i>'+ic+'</i>'+l+'</b></div><div class="kb2">'+[0,1].map(i=>'<button type="button" class="ks'+(KB[a][i]?'':' empty')+'" data-a="'+a+'" data-s="'+i+'">'+kname(KB[a][i])+'</button>').join('')+'</div></div>').join('');
+ const RY=[441,486,531,577,623,668,714,760,806,852],SX=[[518,640],[1150,1272]],SW=[106,102];
+ el.innerHTML=ROWS.map(([a,l,ic],n)=>{const c=n<9?0:1,r=n<9?n+1:n-9;return [0,1].map(i=>'<button type="button" class="ks'+(KB[a][i]?'':' empty')+'" aria-label="'+l+'" data-a="'+a+'" data-s="'+i+'" style="--x:'+(SX[c][i]-2)+';--y:'+(RY[r]-21)+';--w:'+(SW[i]+4)+';--h:42">'+kname(KB[a][i])+'</button>').join('')}).join('');
  kbHints()}
 function stop(){window.KBL=1;setTimeout(()=>{window.KBL=0},220);removeEventListener('keydown',onKey,true);cur=null;endAt=Date.now()}
 function onKey(e){e.preventDefault();e.stopImmediatePropagation();if(e.repeat)return;
