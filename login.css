@@ -138,3 +138,6 @@
 .sp-link:hover,.sp-link:focus-visible{color:#fff}
 
 @media (prefers-reduced-motion:reduce){#sp-pop,#sp-pop *{animation-duration:.01ms!important}.lg-terms.shake{animation:none}}
+
+/* signed out: the home screen is not rendered at all (no art fetched or decoded) until boot-gate.js unlocks it */
+html.csk-pre #menu{display:none!important}
