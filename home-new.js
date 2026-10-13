@@ -24,7 +24,6 @@ function shut(){clearTimeout(pt);$('pop').hidden=true;$('pop').classList.remove(
 $('mstart').onclick=function(){if(mode==='solo')$('solo').click();else openPop()};
 $('pclose').onclick=closePop;
 $('pnclose').onclick=$('pcclose').onclick=function(){show('pmain')};
-$('pop').addEventListener('pointerdown',function(e){if(e.target===$('pop'))closePop()});
 $('pcreate').onclick=function(){show('pnew');setTimeout(function(){$('rn').focus()},320)};
 $('pjoin').onclick=function(){show('pcode');setTimeout(function(){$('rm').focus()},320)};
 function bad(el){el.classList.remove('bad');void el.offsetWidth;el.classList.add('bad');el.focus()}
