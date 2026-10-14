@@ -98,6 +98,22 @@
   ['fullscreenchange','webkitfullscreenchange','MSFullscreenChange'].forEach(function(n){document.addEventListener(n,refit)});
   window.addEventListener('orientationchange',refit);
   if(window.visualViewport) window.visualViewport.addEventListener('resize',function(){var de2=document.documentElement;de2.style.setProperty('--vw',innerWidth+'px');de2.style.setProperty('--vh',innerHeight+'px')});
+  /* Leaving full screen while a match is on (Esc, the full-screen button, browser gesture) stops the game and shows the
+     pause menu. Tapping RESUME there goes back to full screen and continues the game. */
+  ['fullscreenchange','webkitfullscreenchange','MSFullscreenChange'].forEach(function(n){
+    document.addEventListener(n,function(){
+      if(unloading||isFs()) return;
+      try{
+        var inMatch=(typeof sim!=='undefined'&&sim)||(typeof net!=='undefined'&&net);
+        if(inMatch&&typeof setPause==='function'&&!(typeof snap!=='undefined'&&snap&&snap.w)) setPause(true);
+      }catch(e){}
+    });
+  });
+  var rs=document.getElementById('pzr');
+  if(rs){
+    var goFs=function(){ setOff(false); enter(); };
+    ['pointerup','click'].forEach(function(n){ rs.addEventListener(n,goFs,true); });
+  }
   window.CSKFullscreen={enter:enter,isFs:isFs,allow:function(){allowed=true;if(!userOff()) enter();}};
   /* Create Room: skip when signed-out/locked or busy (the click will just be rejected) */
   hook('host',function(el){ return !el.disabled&&!el.classList.contains('lob-locked-btn'); });

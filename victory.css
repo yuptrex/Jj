@@ -1,5 +1,5 @@
 #vs{position:fixed;inset:0;z-index:9000;background:#000;display:none;overflow:hidden}
-#vs.on{display:block;animation:vsin .5s ease-out}
+#vs.on{display:block;animation:vsin 2.6s ease-in-out}
 #vs:before{content:"";position:absolute;inset:-30px;background:url(victory-bg.jpg) center/cover;filter:blur(18px) brightness(.5)}
 @keyframes vsin{from{opacity:0}to{opacity:1}}
 #vs-st{position:absolute;left:0;top:0;width:1600px;height:983px;transform-origin:0 0;background:url(victory-bg.jpg) 0 0/100% 100%;font-family:'Cinzel','Palatino Linotype',Georgia,serif;color:#f3e6c4}

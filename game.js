@@ -1405,7 +1405,7 @@ function hudFx(m,now,W,H,F,dt){
  if(m&&m.al&&lt>=0&&lt<.9){const k=lt/.9;cx.fillStyle=`rgba(255,255,255,${.55*(1-k)*(1-k)})`;cx.fillRect(0,0,W,H);cx.strokeStyle=`hsla(${m.hue},95%,70%,${1-k})`;cx.lineWidth=8*(1-k)+1;cx.beginPath();cx.arc(W/2,H/2,Math.max(1,k*Math.max(W,H)*.6),0,6.28);cx.stroke()}
  if(m&&m.al&&m.inv>0&&!snap.w){const g=cx.createRadialGradient(W/2,H/2,H*.35,W/2,H/2,H*.85);g.addColorStop(0,`hsla(${m.hue},95%,65%,0)`);g.addColorStop(1,`hsla(${m.hue},95%,65%,${.28*Math.min(1,m.inv/.5)})`);cx.fillStyle=g;cx.fillRect(0,0,W,H)}
  if(m&&!m.al&&!snap.w)deathUI(m,now,W,H,F);
- if(m&&snap.w&&snap.w.id==myId&&window.VS){if(!vsLoadShown){vsLoadShown=1;window.CSKLoad&&CSKLoad.show();setTimeout(function(){VS.show(snap,myId);window.CSKLoad&&CSKLoad.hide()},260)}$('home').hidden=true}else{vsLoadShown=0;window.VS&&VS.hide();if(m&&snap.w)roundFx((now-winT)/1000,snap.w.id==myId,W,H,F,dt,snap.w,m);else $('home').hidden=true}
+ if(m&&snap.w&&snap.w.id==myId&&window.VS&&(now-winT)>=3000){if(!vsLoadShown){vsLoadShown=1;VS.show(snap,myId)}$('home').hidden=true}else{vsLoadShown=0;window.VS&&VS.hide();if(m&&snap.w)roundFx((now-winT)/1000,snap.w.id==myId,W,H,F,dt,snap.w,m);else $('home').hidden=true}
  if(conf.length){for(const q of conf){q.vy+=520*dt;q.vx*=1-1.1*dt;q.x+=q.vx*dt;q.y+=q.vy*dt;q.r+=q.vr*dt;q.l-=dt}conf=conf.filter(q=>q.y<H+20&&q.l>0);
   for(const q of conf){cx.save();cx.translate(q.x,q.y);cx.rotate(q.r);cx.scale(1,Math.cos(q.r*2));cx.fillStyle=q.c;cx.fillRect(-q.w/2,-q.h/2,q.w,q.h);cx.restore()}}}
 /* Professional shell: sound toggle, fullscreen, error reporting */
@@ -1631,10 +1631,16 @@ const _oe=onEv;onEv=function(e){try{if(e.k=='kill'){if(e.ai==myId&&e.bi!=myId){s
 const hs=[8,35,55,130,175,210,265,320];let sh=ls('ar-hue');if(sh!=null)myHue=sh;
 hs.forEach(h=>{const b=document.createElement('button');b.className='s'+(h==sh?' on':'');b.style.background='hsl('+h+' 85% 58%)';b.setAttribute('aria-label','Colour '+h);b.onclick=()=>{myHue=h;ls('ar-hue',h);ARA.profile();[...(g('sw')?g('sw').children:[])].forEach(c=>c.classList.toggle('on',c==b))};g('sw')&&g('sw').appendChild(b)});
 const lab={dn:'Damage numbers',fps:'FPS counter'};
-function apply(){window.AR_DMG=set.dn;g('vv').textContent=set.vol+'%';g('vol').value=set.vol;try{if(MG)MG.gain.value=set.vol/100}catch(e){}try{if(window.CSKMusic)CSKMusic.setMax(set.vol/100*.5)}catch(e){}
+function apply(){window.AR_DMG=set.dn;g('vv').textContent=set.vol+'%';g('vol').value=set.vol;g('vol').style.setProperty('--f',set.vol/100);try{if(MG)MG.gain.value=set.vol/100}catch(e){}try{if(window.CSKMusic)CSKMusic.setMax(set.vol/100*.5)}catch(e){}
  document.querySelectorAll('#st .tg').forEach(b=>b.setAttribute('aria-pressed',set[b.dataset.k]?'true':'false'));g('fps').style.display=set.fps?'block':'none';ls('ar-set',set)}
 const _ai=audioInit;audioInit=function(){const r=_ai.apply(this,arguments);apply();return r};
 g('vol').oninput=e=>{set.vol=+e.target.value;apply()};
+/* volume slider: drag anywhere on it (mouse, touch, pen) and it follows the finger the whole way, 0-100 */
+(function(){const v=g('vol');let dr=0;
+ const fromX=e=>{const r=v.getBoundingClientRect(),h=Math.min(r.width/2,r.width*14/152),w=Math.max(1,r.width-2*h);set.vol=Math.round(Math.max(0,Math.min(1,(e.clientX-r.left-h)/w))*100);apply()};
+ v.addEventListener('pointerdown',e=>{if(e.button>0)return;e.preventDefault();dr=1;try{v.setPointerCapture(e.pointerId)}catch(x){}v.focus({preventScroll:true});fromX(e)});
+ v.addEventListener('pointermove',e=>{if(dr){e.preventDefault();fromX(e)}});
+ ['pointerup','pointercancel','lostpointercapture'].forEach(n=>v.addEventListener(n,()=>{dr=0}))})();
 document.querySelectorAll('#st .tg').forEach(b=>b.onclick=()=>{set[b.dataset.k]=!set[b.dataset.k];apply()});
 const open=()=>{g('st').hidden=false},close=()=>{g('st').hidden=true};g('stb').onclick=open;g('stx').onclick=close;g('st').onclick=e=>{if(e.target==g('st'))close()};
 const pb=document.querySelector('#pm .box');if(pb){pb.insertAdjacentHTML('beforeend','<button class="s" id="st2">SETTINGS</button>');g('st2').onclick=open}
