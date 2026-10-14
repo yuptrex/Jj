@@ -504,3 +504,12 @@ The arena (floor, walls, pickups, bullets, particles, lighting) was dull; it is 
 - Walls: same collision rects as before; drawn as dark stone slabs with pillar sprites. Tower blocks on short square walls.
 - Removed: old decor (grass/rock/pond/flag/crystal/sigil), colour patches, zone names, rune rings, centre emblem, cloud shadows, edge glow, wall braziers/flames, ambient fireflies/embers.
 - Props are visual only (no collision) so gameplay, bots and multiplayer sync are unchanged.
+
+## v46 - Ultra HD option
+- Graphics quality now has LOW / MED / HIGH / ULTRA HD. LOW, MED and HIGH use the original arena art, unchanged.
+- ULTRA HD (GFXQ 3) draws the new tiled floor, pillar walls and prop art (`map-floor.jpg`, `map-objs.webp`, loaded only when Ultra HD is used). Old decor, braziers and ambient motes are not drawn in that mode.
+
+## v47 - solid Ultra HD props
+- In an Ultra HD match every prop and every wall pillar/tower block is a solid collider (flagged rects in WALLS, 5th element = 1), sized from `PCOL` footprints. Players, bots, turrets and bullets all collide through WALLS as before.
+- Bullets now use a swept test (`hitWall`) from their previous position, and from the shooter's position on the first tick, so fast bullets can't skip thin objects or spawn through them.
+- The host sends `ux` in the snapshot so clients build the same colliders. LOW/MED/HIGH matches have no prop colliders.
