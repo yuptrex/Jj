@@ -1,24 +1,26 @@
-/* Victory screen: uses victory-bg.png as the artwork, overlays live data. VS.show(snap,myId) / VS.hide() */
+/* Victory screen: uses victory-bg.jpg as the artwork, overlays live data. VS.show(snap,myId) / VS.hide() */
 (function(){
-const W=1672,H=941;
+const W=1600,H=983;
 const PROV=["Great knights don't just fight... they make history.","Steel breaks, but a knight's will never does.","The crown is heavy, but only the brave can carry it.","Every scar is a chapter of a legend.","Kingdoms fall. Legends never do.","Fear the knight who has nothing left to lose.","Glory is earned one battle at a time.","When the dust settles, only the worthy stand.","Rise like a flame, strike like thunder.","A true king is crowned on the battlefield."];
-if(!document.getElementById('vs-font')){const l=document.createElement('link');l.id='vs-font';l.rel='stylesheet';l.href='https://fonts.googleapis.com/css2?family=Exo+2:ital,wght@0,700;0,800;1,600&display=swap';document.head.appendChild(l)}
+if(!document.getElementById('vs-font')){const l=document.createElement('link');l.id='vs-font';l.rel='stylesheet';l.href='https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;900&family=Cinzel+Decorative:wght@700;900&display=swap';document.head.appendChild(l)}
 let root,st,on=0,pi=0,pt=0;
 /* preload the artwork + fonts as soon as the game loads, so the results screen appears instantly */
-const BG=new Image();BG.src='victory-bg.png';if(BG.decode)BG.decode().catch(()=>{});
-if(document.fonts&&document.fonts.load){['700 20px "Exo 2"','800 20px "Exo 2"','italic 600 16px "Exo 2"'].forEach(f=>document.fonts.load(f).catch(()=>{}))}
+const BG=new Image();BG.src='victory-bg.jpg';if(BG.decode)BG.decode().catch(()=>{});
+if(document.fonts&&document.fonts.load){['700 20px "Cinzel"','900 20px "Cinzel"','700 20px "Cinzel Decorative"','900 20px "Cinzel Decorative"'].forEach(f=>document.fonts.load(f).catch(()=>{}))}
 const el=(c,t,p)=>{const e=document.createElement(t||'div');if(c)e.className=c;(p||st).appendChild(e);return e};
 function fit(){if(!root)return;st.style.transform=`scale(${innerWidth/W},${innerHeight/H})`}
 function pic(e,url,name,hue){e.style.backgroundImage='';e.style.background=`hsl(${hue||40} 60% 30%)`;e.textContent=(name||'?')[0].toUpperCase();
- if(!url)return;const im=new Image();im.referrerPolicy='no-referrer';im.onload=()=>{e.style.backgroundImage=`url("${url.replace(/"/g,'')}")`;e.textContent=''};im.src=url}
+ if(!url)return;const im=new Image();im.referrerPolicy='no-referrer';im.onload=()=>{e.style.backgroundImage=`url("${url.replace(/"/g,'')}")`;e.style.backgroundSize='cover';e.style.backgroundRepeat='no-repeat';e.style.backgroundPosition='center';e.textContent=''};im.src=url}
 function photoOf(p,myId){return p.id==myId?((window.ARA&&ARA.account()||{}).photo||p.photo||''):(p.photo||'')}
 function build(snap,myId){
  if(!root){root=el('','div',document.body);root.id='vs';st=document.createElement('div');st.id='vs-st';root.appendChild(st);addEventListener('resize',fit)}
  st.innerHTML='';
  const w=snap.w,rows=[...snap.p].sort((a,b)=>(b.id==w.id)-(a.id==w.id)||b.k-a.k||a.d-b.d).slice(0,10);
- el('vr-fx');
- rows.forEach((p,i)=>{const n=el('nm'+(i?'':' w1'));n.style.top=(354+i*40-16)+'px';n.textContent=p.name;if(p.id==myId)n.style.color='#ffe9a0';
-  const k=el('kl');k.style.top=(354+i*40-16)+'px';k.textContent=p.k});
+ const RY=[407,459,510,561,611,661,711,761,812];
+ rows.slice(1,10).forEach((p,i)=>{const y=RY[i]-19,me=p.id==myId;
+  const av=el('rpic');av.style.top=(RY[i]-20)+'px';pic(av,photoOf(p,myId),p.name,p.hue);
+  const n=el('nm'+(me?' me':''));n.style.top=y+'px';n.textContent=p.name;
+  const k=el('kl');k.style.top=y+'px';k.textContent=p.k});
  const wp=rows[0]||{};
  const pc=el('','div');pc.id='vs-pic';pic(pc,photoOf(wp,myId),wp.name,wp.hue);
  el('','div').id='vs-pn';st.lastChild.textContent=wp.name||'';

@@ -18,7 +18,7 @@
 <!-- Phase 1 visual re-skin (new; loads last so it wins on cascade without touching markup/ids) -->
 <link rel="stylesheet" href="theme-vars.css">
 <link rel="stylesheet" href="theme-home.css">
-<link rel="stylesheet" href="theme-hud.css">
+<link rel="stylesheet" href="theme-hud.css"><link rel="stylesheet" href="hud-art.css">
 <link rel="stylesheet" href="home-new.css">
 <link rel="stylesheet" href="theme-lobby.css">
 <link rel="stylesheet" href="loading.css">
@@ -45,6 +45,7 @@
   </div>
 </div>
 <script src="asset-cache.js"></script>
+<script src="bgm.js"></script>
 <script src="boot-gate.js"></script>   <!-- signed out = light page; everything heavy loads after login -->
 <script>
 /* Loading screen progress: real checkpoints are reported by __cskProg(n) between the big script loads below;
@@ -75,7 +76,7 @@
 <canvas id="c"></canvas><div id="kf"></div><div id="sb" hidden></div><div id="bc"></div><div id="msg"></div><div id="rc" hidden title="Tap to copy"></div><button id="home" hidden>BACK TO HOME</button><div id="rot"><div class="ph"></div>Rotate your phone to landscape to play</div>
 <button id="pz" hidden aria-label="Pause">❚❚</button>
 <div id="pm" hidden><div class="pbox"><img class="pbg" src="pause-panel.webp" alt="Paused" draggable="false"><div class="pbt" id="pzr" role="button" tabindex="0" aria-label="Resume" style="--x:55;--y:316;--w:591;--h:127"></div><div class="pbt" id="pzl" role="button" tabindex="0" aria-label="Button layout" style="--x:55;--y:459;--w:591;--h:111"></div><div class="pbt" id="pzh" role="button" tabindex="0" aria-label="Exit to home" style="--x:55;--y:583;--w:591;--h:110"></div><div class="pbt" id="pzs" role="button" tabindex="0" aria-label="Settings" style="--x:55;--y:706;--w:591;--h:110"></div><div class="tag" id="pn"></div></div></div>
-<div id="ed" hidden><canvas id="ec"></canvas><div id="ep"><b>BUTTON LAYOUT</b><span id="en"></span><label>Size <input type="range" id="esz" min="50" max="180" value="100"></label><label>Opacity <input type="range" id="eop" min="25" max="100" value="100"></label><button class="s" id="ers">RESET</button><button id="eok">SAVE &amp; CLOSE</button></div></div>
+<div id="ed" hidden><canvas id="ec"></canvas><div id="ep"><button id="ebk" type="button">‹ BACK</button><b>BUTTON LAYOUT</b><span id="en"></span><label>Size <input type="range" id="esz" min="50" max="180" value="100"></label><label>Opacity <input type="range" id="eop" min="25" max="100" value="100"></label><button class="s" id="ers">RESET</button><button id="eok">SAVE &amp; CLOSE</button></div></div>
 <div id="menu"><div class="hs">
 <img class="hs-bg" data-src="home-art2.jpg" alt="Clash of Super Knights" draggable="false" decoding="sync">
 <div class="hs-ui">

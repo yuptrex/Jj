@@ -52,13 +52,13 @@
     ['sp-bg','ld-bg'].forEach(function(id){var el=document.getElementById(id);
       if(el)imgSurface(el,function(e){var f=e.dataset.art||'ld-bw.jpg';return ld(f)})});
     /* victory: CSS background + the stage is rebuilt on every show */
-    var vimg=new Image();vimg.src='victory-bg.png';var vs=null;
+    var vimg=new Image();vimg.src='victory-bg.jpg';var vs=null;
     function vcheck(){var st=document.getElementById('vs-st');if(!st)return;
       if(vs&&vs.cv.parentNode===st)return;
       if(vs)surfaces.splice(surfaces.indexOf(vs),1);
       vs=add(vimg,function(){return VICT},function(cv){st.appendChild(cv)});
       if(vimg.complete&&vimg.naturalWidth)vs.load();else vimg.onload=vs.load}
-    setInterval(vcheck,800);
+
   }
   var mq=matchMedia('(prefers-reduced-motion:reduce)');
   function loop(t){

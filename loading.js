@@ -15,7 +15,6 @@
 var TIPS=[
  'Work with your team. Together you are stronger!',
  'Press B to drop a bomb, press B again to detonate it.',
- 'Press Q to fire a grapple rope: hit a wall to zip across, hit an enemy to drag them in.',
  'Dash with Shift to dodge incoming fire.',
  'Spend coins on weapon upgrades with 1-4.',
  'Hold Tab to see the full scoreboard.',
