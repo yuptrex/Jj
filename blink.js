@@ -63,7 +63,7 @@
   var mq=matchMedia('(prefers-reduced-motion:reduce)');
   function loop(t){
     requestAnimationFrame(loop);
-    if(mq.matches) return;
+    if(mq.matches||window.CSK_INMATCH) return;
     for(var i=0;i<surfaces.length;i++){var s=surfaces[i];
       if(!s.cv.offsetParent){continue}
       for(var k=0;k<s.groups.length;k++){var g=s.groups[k];

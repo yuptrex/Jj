@@ -116,28 +116,72 @@ let punchZ=0,vigC=null,vigKey='',hurtT=0,LITE=0,emaDt=1/60,slowT=0;
 const pulse=(now,sp,ph)=>Math.sin(now/sp+(ph||0))*.5+.5;
 
 /* --------------------------------------------------------------- FLOOR */
-function floor(now,dt,hw,hh){
- if(ULTRA())return floorU(now,dt,hw,hh);
- const P=pal();ensure();
- if(TEX.tl!==WALLS.length){TEX.lv=0;ensure()}
- const x0=Math.max(0,cam.x-hw-30),y0=Math.max(0,cam.y-hh-30),x1=Math.min(MW,cam.x+hw+30),y1=Math.min(MH,cam.y+hh+30);
- cx.fillStyle='#04070b';cx.fillRect(0,0,MW,MH);
- cx.fillStyle=TEX.fp;cx.fillRect(x0,y0,x1-x0,y1-y0);
- const vis=(x,y,r)=>x+r>x0&&x-r<x1&&y+r>y0&&y-r<y1;
- // baked colour patches + zone light pools (one cheap draw)
- {const sx=x0/MS,sy=y0/MS,sw=(x1-x0)/MS,sh=(y1-y0)/MS;cx.globalAlpha=1;cx.drawImage(TEX.map,sx,sy,sw,sh,x0,y0,x1-x0,y1-y0)}
+/* ==========================================================================
+   BAKED ARENA (performance)
+   The arena (floor, patches, zone names, props, solid walls, pillars, rim) never changes during a match, so it is
+   painted ONCE into square canvas tiles and each frame is just a handful of drawImage() calls. Only the things that
+   really move (runes, torches, wall glow, scorch marks, clouds, barrier) are drawn live on top.
+   Tiles are baked lazily (visible ones on demand, the ring around the camera one per spare frame) and kept in a small
+   LRU cache so memory stays bounded on phones. Resolution follows the screen scale (capped lower on low-end devices).
+   ========================================================================== */
+const LOWDEV=(()=>{try{return(navigator.hardwareConcurrency||8)<=4||(navigator.deviceMemory||8)<=4||/Android|iPhone|iPad|Mobile/i.test(navigator.userAgent||'')}catch(e){return false}})();
+window.CSK_LOWDEV=LOWDEV;
+const WEAK=(()=>{try{return(navigator.deviceMemory&&navigator.deviceMemory<=3)||(navigator.hardwareConcurrency&&navigator.hardwareConcurrency<=4)}catch(e){return false}})();window.CSK_WEAK=!!WEAK;
+const TL={T:512,M:6,k:0,k0:0,key:'',map:new Map(),pool:[],tick:0,max:20,mb:LOWDEV?40e6:90e6};
+function tileK(){const want=Math.max(.35,S*dpr),cap=LOWDEV?1:1.5;
+ if(!TL.k0||want<TL.k0*.8||(want>TL.k0*1.25&&TL.k0<cap))TL.k0=Math.min(cap,Math.max(.35,Math.round(want*8)/8));
+ return TL.k0}
+function getTile(tx,ty){
+ const id=ty*1000+tx;let t=TL.map.get(id);if(t){t.u=TL.tick;return t}
+ const T=TL.T,M=TL.M,w=T+2*M,sz=Math.ceil(w*TL.k),kx=sz/w;
+ if(TL.map.size>=TL.max){let bo=null,bu=1e18;for(const[i,e]of TL.map)if(e.u<TL.tick&&e.u<bu){bu=e.u;bo=i}if(bo!=null){TL.pool.push(TL.map.get(bo).c);TL.map.delete(bo)}}
+ const tb=performance.now();let c=TL.pool.pop();if(!c||c.width!==sz)c=mk(sz,sz);
+ const g=c.getContext('2d',{alpha:false}),ox=tx*T-M,oy=ty*T-M,sv=cx;
+ g.setTransform(1,0,0,1,0,0);g.globalAlpha=1;g.globalCompositeOperation='source-over';g.fillStyle='#04070b';g.fillRect(0,0,sz,sz);
+ try{cx=g;g.setTransform(kx,0,0,kx,-ox*kx,-oy*kx);ULTRA()?staticU(ox,oy,ox+w,oy+w):staticN(ox,oy,ox+w,oy+w)}
+ catch(e){if(!window.__tlE){window.__tlE=1;console.error('arena bake',e)}}
+ finally{cx=sv}
+ TL.ms=(TL.ms||0)+performance.now()-tb;TL.n=(TL.n||0)+1;TL.mx=Math.max(TL.mx||0,performance.now()-tb);
+ t={c,u:TL.tick};TL.map.set(id,t);return t}
+function blitTiles(x0,y0,x1,y1){
+ TL.k=tileK();
+ const key=[LV,ULTRA()?1:0,gfx(),ART.ready|0,WALLS.length,TL.k,TEX.px].join('|');
+ if(key!==TL.key){TL.key=key;TL.map.clear();TL.pool.length=0}
+ TL.tick++;const T=TL.T,M=TL.M,w=T+2*M,nx=Math.ceil(MW/T)-1,ny=Math.ceil(MH/T)-1;
+ const a=Math.max(0,Math.floor(x0/T)),b=Math.min(nx,Math.floor(x1/T)),c=Math.max(0,Math.floor(y0/T)),d=Math.min(ny,Math.floor(y1/T));
+ {const sz=Math.ceil(w*TL.k),vis=(b-a+1)*(d-c+1),ring=(b-a+3)*(d-c+3);TL.max=Math.max(vis+1,Math.min(ring+2,Math.floor(TL.mb/(sz*sz*4))))} // keep the visible tiles plus a one-tile ring, bounded by a memory budget
+ cx.globalAlpha=1;cx.globalCompositeOperation='source-over';cx.imageSmoothingEnabled=true;
+ for(let ty=c;ty<=d;ty++)for(let tx=a;tx<=b;tx++)cx.drawImage(getTile(tx,ty).c,tx*T-M,ty*T-M,w,w);
+ // warm the ring around the view: one tile per spare frame so moving never has to bake on demand
+ if(emaDt<.021&&TL.map.size<TL.max){outer:for(let ty=Math.max(0,c-1);ty<=Math.min(ny,d+1);ty++)for(let tx=Math.max(0,a-1);tx<=Math.min(nx,b+1);tx++){if(!TL.map.has(ty*1000+tx)){getTile(tx,ty);break outer}}}}
+
+function staticN(x0,y0,x1,y1){ // classic look, everything that does not move
+ const P=pal(),vis=(x,y,r)=>x+r>x0&&x-r<x1&&y+r>y0&&y-r<y1;
+ const bx0=Math.max(0,x0),by0=Math.max(0,y0),bx1=Math.min(MW,x1),by1=Math.min(MH,y1);if(bx1<=bx0||by1<=by0)return;
+ cx.fillStyle='#04070b';cx.fillRect(bx0,by0,bx1-bx0,by1-by0);
+ cx.fillStyle=TEX.fp;cx.fillRect(bx0,by0,bx1-bx0,by1-by0);
+ cx.globalAlpha=1;cx.drawImage(TEX.map,bx0/MS,by0/MS,(bx1-bx0)/MS,(by1-by0)/MS,bx0,by0,bx1-bx0,by1-by0);
  // zone names, painted into the ground
  cx.save();cx.textAlign='center';cx.font='bold 150px "Trebuchet MS",sans-serif';try{cx.letterSpacing='22px'}catch(e){}
  ZN.forEach((z,i)=>{if(!vis(z[1],z[2],700))return;cx.fillStyle='rgba(255,255,255,.055)';cx.strokeStyle=P.zones[i%5];cx.globalAlpha=.20;cx.lineWidth=3;cx.strokeText(z[0],z[1],z[2]);cx.globalAlpha=1;cx.fillText(z[0],z[1],z[2])});
  cx.restore();
+ decor(0,P,0,0,vis);
+ const L=[];for(const w of WALLS){if(w[4]||w[0]>x1+30||w[0]+w[2]<x0-30||w[1]>y1+30||w[1]+w[3]<y0-30)continue;L.push(w)}
+ wallsBase(L,P);cx.globalAlpha=1}
+
+function floor(now,dt,hw,hh){
+ if(ULTRA())return floorU(now,dt,hw,hh);
+ const P=pal();ensure();
+ if(TEX.tl!==WALLS.length){TEX.lv=0;ensure()}
+ const x0=Math.max(0,cam.x-hw-40),y0=Math.max(0,cam.y-hh-40),x1=Math.min(MW,cam.x+hw+40),y1=Math.min(MH,cam.y+hh+40);
+ blitTiles(x0,y0,x1,y1);
+ const vis=(x,y,r)=>x+r>x0&&x-r<x1&&y+r>y0&&y-r<y1;
  // rune rings under every zone + the big royal emblem in the middle (skipped on Low: several strokes each, every frame)
  if(gfx()>0){
   cx.save();cx.globalCompositeOperation='lighter';cx.lineCap='round';
   ZN.forEach((z,i)=>{if(!vis(z[1],z[2],200))return;rune(z[1],z[2],i==4?150:120,P.zones[i%5],now,i)});
   if(vis(MW/2,MH/2,300))emblem(MW/2,MH/2,now,P);
   cx.restore()}
- // decor
- decor(now,P,hw,hh,vis);
  // scorch marks / decals
  for(let i=decals.length-1;i>=0;i--){const d=decals[i];d.l-=dt;if(d.l<=0){decals.splice(i,1);continue}
   if(!vis(d.x,d.y,d.r))continue;const k=Math.min(1,d.l/d.m*1.6),hot=Math.max(0,d.l-(d.m-.9))/.9;
@@ -256,35 +300,36 @@ function barrier(now,P){
  cx.restore()}
 
 /* --------------------------------------------------------------- WALLS */
-function walls(now,hw,hh){
- if(ULTRA())return wallsU(now,hw,hh);
- const P=pal();ensure();
- const x0=cam.x-hw-90,x1=cam.x+hw+90,y0=cam.y-hh-90,y1=cam.y+hh+90,FH=12;
- const L=[];for(const w of WALLS){if(w[4]||w[0]>x1||w[0]+w[2]<x0||w[1]>y1||w[1]+w[3]<y0)continue;L.push(w)}
- // soft contact shadows
+function wallsBase(L,P){ // everything about a wall that never moves: contact shadow, face, bricks, lit edges, corner rivets
+ const FH=12;
  cx.fillStyle='rgba(0,0,10,.30)';for(const[x,y,w,h]of L)cx.fillRect(x+7,y+11,w+3,h+FH+3);
- const tp=pulse(now,900);
  for(const[x,y,w,h]of L){
-  // vertical face (gives the wall real height)
   let g=cx.createLinearGradient(0,y+h,0,y+h+FH);g.addColorStop(0,P.faceTop);g.addColorStop(1,P.faceBot);
   cx.fillStyle=g;cx.fillRect(x,y+h,w,FH);
   cx.fillStyle='rgba(0,0,0,.28)';for(let xx=x+20;xx<x+w-4;xx+=40)cx.fillRect(xx,y+h,1.6,FH);
-  // brick top
   cx.save();cx.translate(x,y);cx.fillStyle=TEX.wp;cx.fillRect(0,0,w,h);cx.restore();
   g=cx.createLinearGradient(0,y,0,y+h);g.addColorStop(0,'rgba(255,255,255,.26)');g.addColorStop(.35,'rgba(255,255,255,.04)');g.addColorStop(1,'rgba(0,0,12,.30)');
   cx.fillStyle=g;cx.fillRect(x,y,w,h);
-  // lit edges
   cx.fillStyle=P.edgeHi;cx.globalAlpha=.85;cx.fillRect(x,y,w,2.5);cx.globalAlpha=.5;cx.fillRect(x,y,2.5,h);
   cx.fillStyle=P.edgeLo;cx.globalAlpha=.7;cx.fillRect(x+w-2.5,y,2.5,h);cx.globalAlpha=1;
   // corner pillars with rivets
   for(const[a,b]of[[x,y],[x+w-11,y],[x,y+h-11],[x+w-11,y+h-11]]){const pg=cx.createLinearGradient(a,b,a+11,b+11);pg.addColorStop(0,'rgba(255,255,255,.34)');pg.addColorStop(1,'rgba(0,0,0,.30)');cx.fillStyle=pg;cx.fillRect(a,b,11,11);cx.fillStyle=P.trim2;cx.globalAlpha=.9;cx.beginPath();cx.arc(a+5.5,b+5.5,1.7,0,TAU);cx.fill();cx.globalAlpha=1}
-  // glowing trim along the base of the face
+ }}
+function wallsDyn(L,now,P){ // the living part: pulsing trim, travelling shimmer, halo, braziers
+ const FH=12,tp=pulse(now,900);
+ for(const[x,y,w,h]of L){
   cx.save();cx.globalCompositeOperation='lighter';
   cx.fillStyle=P.trim;cx.globalAlpha=.55+.25*tp;cx.fillRect(x+3,y+h+1,w-6,2.6);
   cx.globalAlpha=.9;cx.fillStyle=P.trim2;const off=(now/26)%46;for(let xx=x+3-46+off;xx<x+w-9;xx+=46){const a=Math.max(x+3,xx),b=Math.min(x+w-3,xx+16);if(b>a)cx.fillRect(a,y+h+1,b-a,2.6)}
   cx.globalAlpha=.06+.03*tp;cx.strokeStyle=P.trim;cx.lineWidth=9;cx.strokeRect(x-4,y-4,w+8,h+FH+8);
   cx.restore();cx.globalAlpha=1}
- // braziers
+}
+function walls(now,hw,hh){
+ if(ULTRA())return wallsU(now,hw,hh);
+ const P=pal();ensure();
+ const x0=cam.x-hw-90,x1=cam.x+hw+90,y0=cam.y-hh-90,y1=cam.y+hh+90;
+ const L=[];for(const w of WALLS){if(w[4]||w[0]>x1||w[0]+w[2]<x0||w[1]>y1||w[1]+w[3]<y0)continue;L.push(w)}
+ wallsDyn(L,now,P);
  cx.save();
  for(const[tx,ty,sd]of TEX.torches){if(tx<x0||tx>x1||ty<y0||ty>y1)continue;brazier(tx,ty,now,sd,P)}
  cx.restore()}
@@ -317,50 +362,43 @@ function sprite(n,x,y,w,flip){ // draws atlas sprite n with its feet centred on 
  else cx.drawImage(ART.atlas,a[0],a[1],a[2],a[3],x-w/2,y-h+w*.08,w,h)}
 
 /* --------------------------------------------------------------- FLOOR */
-function floorU(now,dt,hw,hh){
- loadArt();
- const x0=Math.max(0,cam.x-hw-30),y0=Math.max(0,cam.y-hh-30),x1=Math.min(MW,cam.x+hw+30),y1=Math.min(MH,cam.y+hh+30);
+function staticU(x0,y0,x1,y1){ // Ultra HD: floor art + props + rim + solid walls + pillars, baked
  const vis=(x,y,r)=>x+r>x0&&x-r<x1&&y+r>y0&&y-r<y1;
- cx.fillStyle='#0a1424';cx.fillRect(x0,y0,x1-x0,y1-y0);
- if(ART.ready){
-  if(!ART.fp){const k=ART.cell/126.9,c=mk(Math.round(ART.floor.width*k),Math.round(ART.floor.height*k)),g=c.getContext('2d');g.imageSmoothingQuality='high';g.drawImage(ART.floor,0,0,c.width,c.height);ART.fp=cx.createPattern(c,'repeat')} /* baked once at final size: no per-frame pattern scaling */
-  cx.fillStyle=ART.fp;cx.fillRect(x0,y0,x1-x0,y1-y0)}
- // map props (bushes, rocks, crates, banners, statues ...) sit on the floor, y-sorted
+ const bx0=Math.max(0,x0),by0=Math.max(0,y0),bx1=Math.min(MW,x1),by1=Math.min(MH,y1);if(bx1<=bx0||by1<=by0)return;
+ cx.fillStyle='#0a1424';cx.fillRect(bx0,by0,bx1-bx0,by1-by0);
+ if(ART.ready&&ART.fp){cx.fillStyle=ART.fp;cx.fillRect(bx0,by0,bx1-bx0,by1-by0)}
  if(ART.ready)for(const d of PROPS){if(!vis(d.x,d.y,110))continue;
   const w=PW[d.n]*d.s;
   cx.globalAlpha=.30;cx.fillStyle='#000';cx.beginPath();cx.ellipse(d.x+w*.05,d.y+w*.02,w*.42,w*.13,0,0,TAU);cx.fill();cx.globalAlpha=1;
   sprite(d.n,d.x,d.y,w,d.f)}
- // scorch marks / decals
- for(let i=decals.length-1;i>=0;i--){const d=decals[i];d.l-=dt;if(d.l<=0){decals.splice(i,1);continue}
-  if(!vis(d.x,d.y,d.r))continue;const k=Math.min(1,d.l/d.m*1.6),hot=Math.max(0,d.l-(d.m-.9))/.9;
-  cx.globalAlpha=.55*k;cx.drawImage(glowSpr('#000'),d.x-d.r,d.y-d.r,d.r*2,d.r*2);
-  if(hot>0){cx.globalCompositeOperation='lighter';cx.globalAlpha=.7*hot;cx.drawImage(glowSpr(d.c),d.x-d.r*.8,d.y-d.r*.8,d.r*1.6,d.r*1.6);cx.globalCompositeOperation='source-over'}}
- cx.globalAlpha=1;
- // arena rim: dark inner shadow so the edge of the map reads clearly
- cx.fillStyle='rgba(0,0,0,.55)';
- if(x0<40)cx.fillRect(0,y0,40,y1-y0);if(x1>MW-40)cx.fillRect(MW-40,y0,40,y1-y0);
- if(y0<40)cx.fillRect(x0,0,x1-x0,40);if(y1>MH-40)cx.fillRect(x0,MH-40,x1-x0,40);
- return 1}
-
-/* --------------------------------------------------------------- WALLS
-   Top face = the floor tile darkened + a metal frame; stone pillars (atlas) stand along every wall,
-   big tower blocks on the short square walls. */
-function wallsU(now,hw,hh){
- const x0=cam.x-hw-120,x1=cam.x+hw+120,y0=cam.y-hh-120,y1=cam.y+hh+120,FH=14;
- const L=[];for(const w of WALLS){if(w[4]||w[0]>x1||w[0]+w[2]<x0||w[1]>y1||w[1]+w[3]<y0)continue;L.push(w)}
+ cx.globalAlpha=1;cx.fillStyle='rgba(0,0,0,.55)';
+ cx.fillRect(0,0,40,MH);cx.fillRect(MW-40,0,40,MH);cx.fillRect(0,0,MW,40);cx.fillRect(0,MH-40,MW,40);
+ const FH=14,L=[];for(const w of WALLS){if(w[4]||w[0]>x1+120||w[0]+w[2]<x0-120||w[1]>y1+120||w[1]+w[3]<y0-120)continue;L.push(w)}
  cx.fillStyle='rgba(0,0,10,.34)';for(const[x,y,w,h]of L)cx.fillRect(x+8,y+12,w+3,h+FH+3);
  for(const[x,y,w,h]of L){
   cx.fillStyle='#1a2338';cx.fillRect(x,y+h,w,FH);cx.fillStyle='#0c1220';cx.fillRect(x,y+h+FH*.55,w,FH*.45);
   cx.fillStyle='#202b45';cx.fillRect(x,y,w,h);cx.fillStyle='#161f35';cx.fillRect(x,y+h*.5,w,h*.5);
   cx.lineJoin='round';cx.strokeStyle='#a9b2c6';cx.lineWidth=3;cx.strokeRect(x+1.5,y+1.5,w-3,h-3);
   cx.strokeStyle='rgba(225,235,255,.55)';cx.lineWidth=1.2;cx.beginPath();cx.moveTo(x+3,y+h-3);cx.lineTo(x+3,y+3);cx.lineTo(x+w-3,y+3);cx.stroke()}
- if(!ART.ready)return;
- const Pl=[];for(const w of L)for(const p of wallPillars(w))Pl.push(p);
- Pl.sort((a,b)=>a[0]-b[0]);
- for(const p of Pl)sprite(p[1],p[2],p[3],p[4]);
+ if(ART.ready){const Pl=[];for(const w of L)for(const p of wallPillars(w))Pl.push(p);
+  Pl.sort((a,b)=>a[0]-b[0]);for(const p of Pl)sprite(p[1],p[2],p[3],p[4])}
  cx.globalAlpha=1}
+function floorU(now,dt,hw,hh){
+ loadArt();
+ const x0=Math.max(0,cam.x-hw-40),y0=Math.max(0,cam.y-hh-40),x1=Math.min(MW,cam.x+hw+40),y1=Math.min(MH,cam.y+hh+40);
+ const vis=(x,y,r)=>x+r>x0&&x-r<x1&&y+r>y0&&y-r<y1;
+ if(ART.ready&&!ART.fp){const k=ART.cell/126.9,c=mk(Math.round(ART.floor.width*k),Math.round(ART.floor.height*k)),g=c.getContext('2d');g.imageSmoothingQuality='high';g.drawImage(ART.floor,0,0,c.width,c.height);ART.fp=cx.createPattern(c,'repeat')} /* baked once at final size */
+ blitTiles(x0,y0,x1,y1);
+ // scorch marks / decals
+ for(let i=decals.length-1;i>=0;i--){const d=decals[i];d.l-=dt;if(d.l<=0){decals.splice(i,1);continue}
+  if(!vis(d.x,d.y,d.r))continue;const k=Math.min(1,d.l/d.m*1.6),hot=Math.max(0,d.l-(d.m-.9))/.9;
+  cx.globalAlpha=.55*k;cx.drawImage(glowSpr('#000'),d.x-d.r,d.y-d.r,d.r*2,d.r*2);
+  if(hot>0){cx.globalCompositeOperation='lighter';cx.globalAlpha=.7*hot;cx.drawImage(glowSpr(d.c),d.x-d.r*.8,d.y-d.r*.8,d.r*1.6,d.r*1.6);cx.globalCompositeOperation='source-over'}}
+ cx.globalAlpha=1;
+ return 1}
 
-
+/* Ultra walls + pillars are part of the baked arena tiles (see staticU), nothing to draw live. */
+function wallsU(){}
 
 /* --------------------------------------------------------- pads & coins */
 function pads(list,tm){
@@ -461,7 +499,8 @@ function flashesDraw(dt){
 
 /* screen-space finish: vignette, player spotlight, low-health pulse */
 function post(now,dt,m,hw,hh){
- if(dt>0){emaDt+=(Math.min(dt,.1)-emaDt)*.05;if(emaDt>1/38&&!window.BFX_NOLITE){slowT+=dt;if(slowT>2.5)LITE=1}else slowT=Math.max(0,slowT-dt)}
+ if(dt>0){emaDt+=(Math.min(dt,.1)-emaDt)*.05;if(emaDt>1/50&&!window.BFX_NOLITE){slowT+=dt;if(slowT>1.5)LITE=1}else slowT=Math.max(0,slowT-dt)}
+ try{if(window.PFQ)PFQ.lq=LITE?1:0}catch(e){}
  try{flashesDraw(dt);if(!LITE&&gfx()>0&&!ULTRA())ambient(now,dt,hw,hh)}catch(e){}
  const W=cv.width,H=cv.height,P=pal(),key=W+'x'+H+'|'+LV;
  if(vigKey!==key){
@@ -536,6 +575,6 @@ function ev(e){
  case 'tdie':flashes.push({x:e.x,y:e.y,r:200,l:.22,m:.22,c:hc});sparks(e.x,e.y,hc,18,480,.7,4);break;
  }}
 
-window.BFX={floor,walls,pads,coin,bullet,under,tag,parts:partsDraw,rings:ringsDraw,texts:textsDraw,post,zoom,ev,
- reset(){LITE=0;slowT=0;flashes.length=0;decals.length=0;amb.length=0;punchZ=0;hurtT=0}};
+window.BFX={tiles:TL,floor,walls,pads,coin,bullet,under,tag,parts:partsDraw,rings:ringsDraw,texts:textsDraw,post,zoom,ev,
+ reset(){LITE=window.CSK_WEAK?1:0;slowT=0;flashes.length=0;decals.length=0;amb.length=0;punchZ=0;hurtT=0}};
 })();

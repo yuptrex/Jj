@@ -34,7 +34,7 @@ function whenSrc(cb){if(bg.getAttribute('src'))return cb();var mo=new MutationOb
     var last=0, mq=matchMedia('(prefers-reduced-motion:reduce)');
     function frame(ms){
       requestAnimationFrame(frame);
-      if(ms-last<33||document.hidden||mq.matches||!cv.offsetParent) return; last=ms;
+      if(window.CSK_INMATCH||ms-last<33||document.hidden||mq.matches||!cv.offsetParent) return; last=ms;
       var t=ms/1000;
       for(var k=0;k<R.length;k++){
         var r=R[k],ty=r[4],o=r.o.data,w=r.w,h=r.h,m=r.m,x0=r[0],y0=r[1];

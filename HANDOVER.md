@@ -513,3 +513,11 @@ The arena (floor, walls, pickups, bullets, particles, lighting) was dull; it is 
 - In an Ultra HD match every prop and every wall pillar/tower block is a solid collider (flagged rects in WALLS, 5th element = 1), sized from `PCOL` footprints. Players, bots, turrets and bullets all collide through WALLS as before.
 - Bullets now use a swept test (`hitWall`) from their previous position, and from the shooter's position on the first tick, so fast bullets can't skip thin objects or spawn through them.
 - The host sends `ux` in the snapshot so clients build the same colliders. LOW/MED/HIGH matches have no prop colliders.
+
+---
+## v50 — performance pass
+- Collision uses a spatial grid (`WG` in game.js); Ultra HD's hundreds of solid props no longer cost a full scan per player/bullet step.
+- The static arena (floor, props, walls, pillars, zone names, rim) is baked into cached canvas tiles (battle-fx.js `TL`, `blitTiles`); only moving things draw live.
+- Off-screen coins, pickups, crates and players are skipped. Background menu animation loops stop during a match.
+- Low-end devices (<=4 cores / <=3GB, or mobile) get capped resolution, lower adaptive floor (60%) and automatic LITE effects.
+- Classic (non-Ultra) mode: grass/water decor is now baked in a still pose.

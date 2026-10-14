@@ -339,7 +339,9 @@ body.noanim #menu *,body.noanim #menu *::before,body.noanim #menu *::after{anima
 .tch .ab-tx b{font-size:22px}.tch .ab-tx small{font-size:12px}
 @keyframes abIn{0%{opacity:0;transform:translateY(16px) scale(.8)}100%{opacity:1;transform:none}}
 @keyframes abShine{0%,55%{transform:translateX(-130%)}100%{transform:translateX(130%)}}
-@keyframes abGlow{0%,100%{filter:drop-shadow(0 6px 10px #000a) drop-shadow(0 0 8px color-mix(in srgb,var(--c) 45%,transparent))}50%{filter:drop-shadow(0 6px 10px #000a) drop-shadow(0 0 20px color-mix(in srgb,var(--c) 90%,transparent))}}
+/* perf: animating filter:drop-shadow re-rasterises the button every frame; keep the glow static and pulse only opacity (compositor-only) */
+#crb,#swb{filter:drop-shadow(0 6px 10px #000a) drop-shadow(0 0 14px color-mix(in srgb,var(--c) 70%,transparent))}
+@keyframes abGlow{0%,100%{opacity:.82}50%{opacity:1}}
 /* ---- crate panel ---- */
 #crp{border-color:color-mix(in srgb,var(--c) 70%,transparent)!important;box-shadow:0 12px 32px #000b,0 0 30px color-mix(in srgb,var(--c) 35%,transparent)!important}
 #crp .ch{justify-content:flex-start;gap:10px;margin:0 0 10px;letter-spacing:0;font-size:inherit}

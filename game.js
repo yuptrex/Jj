@@ -108,11 +108,21 @@ const BOT_DMG=.25; // bot damage multiplier (1 = same as players)
 const UC=[15,30,50,75,105],newUp=()=>Object.fromEntries(Object.keys(WP).map(k=>[k,[0,0,0,0]]));
 const eff=p=>{const W=WP[p.w],u=p.up[p.w];return{dmg:W.dmg*(1+.2*u[0]),rate:W.rate*(1-.09*u[1]),mag:W.mag+Math.round(W.mag*.3*u[2]),rel:W.rel*(1-.12*u[3])}};
 const rnd=a=>a[Math.random()*a.length|0],cl=(v,a,b)=>Math.max(a,Math.min(b,v));
+/* ---- spatial grid for solids: Ultra HD adds hundreds of prop/pillar rects, and every player push + every bullet step used to scan all of them.
+   The grid keeps the exact same rects and the exact same maths; it only skips the ones that cannot be touched. */
+const WG={n:-1,dirty:1,cs:160,cw:0,ch:0,cells:[]};
+function wgBuild(){const cs=WG.cs,cw=Math.ceil(MW/cs),ch=Math.ceil(MH/cs),cells=new Array(cw*ch);for(let i=0;i<cells.length;i++)cells[i]=null;
+ for(let i=0;i<WALLS.length;i++){const w=WALLS[i],x0=Math.max(0,Math.floor((w[0]-R-1)/cs)),x1=Math.min(cw-1,Math.floor((w[0]+w[2]+R+1)/cs)),y0=Math.max(0,Math.floor((w[1]-R-1)/cs)),y1=Math.min(ch-1,Math.floor((w[1]+w[3]+R+1)/cs));
+  for(let gy=y0;gy<=y1;gy++)for(let gx=x0;gx<=x1;gx++){const k=gy*cw+gx;(cells[k]||(cells[k]=[])).push(w)}}
+ WG.cw=cw;WG.ch=ch;WG.cells=cells;WG.n=WALLS.length;WG.dirty=0}
+const WG_NONE=[];
+function wgAt(x,y){if(WG.dirty||WG.n!==WALLS.length)wgBuild();const gx=(x/WG.cs)|0,gy=(y/WG.cs)|0;if(x<0||y<0||gx>=WG.cw||gy>=WG.ch)return WG_NONE;return WG.cells[gy*WG.cw+gx]||WG_NONE}
 function push(p){for(let it=0;it<5;it++){let mv=0; // several passes: pushed out of one solid must not end up inside the next (corners between props)
- for(const[x,y,w,h]of WALLS){const cx=cl(p.x,x,x+w),cy=cl(p.y,y,y+h),dx=p.x-cx,dy=p.y-cy,d=Math.hypot(dx,dy);
-  if(d<R){mv=1;if(d){p.x=cx+dx/d*R;p.y=cy+dy/d*R}else{const l=p.x-x,r=x+w-p.x,t=p.y-y,b=y+h-p.y,m=Math.min(l,r,t,b);if(m==l)p.x=x-R;else if(m==r)p.x=x+w+R;else if(m==t)p.y=y-R;else p.y=y+h+R}}}
+ const L=wgAt(p.x,p.y);
+ for(let i=0;i<L.length;i++){const w=L[i],x=w[0],y=w[1],ww=w[2],h=w[3],cx=cl(p.x,x,x+ww),cy=cl(p.y,y,y+h),dx=p.x-cx,dy=p.y-cy,d=Math.hypot(dx,dy);
+  if(d<R){mv=1;if(d){p.x=cx+dx/d*R;p.y=cy+dy/d*R}else{const l=p.x-x,r=x+ww-p.x,t=p.y-y,b=y+h-p.y,m=Math.min(l,r,t,b);if(m==l)p.x=x-R;else if(m==r)p.x=x+ww+R;else if(m==t)p.y=y-R;else p.y=y+h+R}}}
  if(!mv)break}p.x=cl(p.x,R,MW-R);p.y=cl(p.y,R,MH-R)}
-const inWall=(x,y)=>WALLS.some(([a,b,w,h])=>x>a&&x<a+w&&y>b&&y<b+h);
+const inWall=(x,y)=>{const L=wgAt(x,y);for(let i=0;i<L.length;i++){const w=L[i];if(x>w[0]&&x<w[0]+w[2]&&y>w[1]&&y<w[1]+w[3])return true}return false};
 const hitWall=(x0,y0,x1,y1)=>{const n=Math.max(1,Math.ceil(Math.hypot(x1-x0,y1-y0)/8));for(let i=1;i<=n;i++){const t=i/n;if(inWall(x0+(x1-x0)*t,y0+(y1-y0)*t))return 1}return 0}; // swept test: fast bullets can't skip thin objects
 const rng=()=>{SEED=SEED+0x6D2B79F5|0;let t=Math.imul(SEED^SEED>>>15,1|SEED);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296};
 /* ---- Ultra HD prop layout: designed, mirrored into all four quadrants (no random scatter) ----
@@ -163,7 +173,7 @@ function buildProps(rr){
  q0.forEach((w,j)=>{const hor=w[2]>=w[3];
   if(hor){tryC(PT.flag2.h,w[0]-34,w[1]+w[3],j&1,6,50,0);tryC(PT.flag2.h,w[0]+w[2]+34,w[1]+w[3],(j&1)^1,6,50,0)}
   else{tryC(PT.flag1.h,w[0]+w[2]/2,w[1]-20,j&1,6,50,0);tryC(PT.flag1.h,w[0]+w[2]/2,w[1]+w[3]+52,(j&1)^1,6,50,0)}})}
-function setLevel(n,ux){LV=n;UX=ux===undefined?((window.GFXQ==null?2:window.GFXQ)>=3?1:0):(ux?1:0);SEED=n==1?1337:9001;for(const a of[WALLS,PKP,CHP,PKTY,DEC,PAT,CSP,ZN,PROPS])a.length=0;
+function setLevel(n,ux){WG.dirty=1;LV=n;UX=ux===undefined?((window.GFXQ==null?2:window.GFXQ)>=3?1:0):(ux?1:0);SEED=n==1?1337:9001;for(const a of[WALLS,PKP,CHP,PKTY,DEC,PAT,CSP,ZN,PROPS])a.length=0;
  const BS=n==2?BASE2:BASE1,PB=n==2?PKB2:PKB1,CB=n==2?CHB2:CHB1;
  for(const qx of[0,1])for(const qy of[0,1])for(const[x,y,w,h]of BS)WALLS.push([qx?4800-x-w:x,qy?3200-y-h:y,w,h]);
  if(n==2)WALLS.push([2100,1300,240,40],[2460,1300,240,40],[2100,1860,240,40],[2460,1860,240,40],[2100,1340,40,200],[2100,1660,40,200],[2660,1340,40,200],[2660,1660,40,200]);
@@ -329,7 +339,7 @@ class Sim{
 }
 
 /* ============ CLIENT ============ */
-const cv=document.getElementById('c'),cx=cv.getContext('2d',{alpha:false}),$=id=>document.getElementById(id);
+const cv=document.getElementById('c'),$=id=>document.getElementById(id);let cx=cv.getContext('2d',{alpha:false});  /* cx is swappable so the static arena can be baked into cached tiles */
 /* 90fps: when the governor drops to a low-quality tier, canvas shadows/glows (very slow on GPUs) are switched off */
 var PFQ={lq:0};try{const _sb=Object.getOwnPropertyDescriptor(CanvasRenderingContext2D.prototype,'shadowBlur'),_sc=Object.getOwnPropertyDescriptor(CanvasRenderingContext2D.prototype,'shadowColor');
 Object.defineProperty(cx,'shadowBlur',{configurable:true,get(){return _sb.get.call(cx)},set(v){_sb.set.call(cx,PFQ.lq?0:v)}});
@@ -339,7 +349,7 @@ let snap={p:[],b:[],k:[],w:null},snapAt=0,netEv=[],views={},parts=[],rings=[],te
 const cam={x:MW/2,y:MH/2},keys={},M={x:0,y:0,down:false},ST={mv:null,aim:null,fire:null,dash:0,rel:0};
 let paused=false,lockId='',selLv=1,beams=[],conf=[],hpS=100,healAt=-1e9,liveAt=-1e9,deadSince=0,wasAlive=null,winT=0,confDone=0,specId=null,vsLoadShown=0;
 let rScale=1;
-function rs(){dpr=Math.max(.5,Math.min(devicePixelRatio||1,1.75)*rScale);cv.width=Math.max(1,Math.round(innerWidth*dpr));cv.height=Math.max(1,Math.round(innerHeight*dpr));cv.style.width=innerWidth+'px';cv.style.height=innerHeight+'px';S=Math.min(innerWidth/1000,innerHeight/620);UIS=Math.max(.64,Math.min(1,Math.min(innerWidth/980,innerHeight/560)));try{document.documentElement.style.setProperty("--uis",UIS.toFixed(3));if(typeof uisApply=="function")uisApply()}catch(e){}}
+function rs(){dpr=Math.max(.5,Math.min(devicePixelRatio||1,window.CSK_WEAK?1.25:window.CSK_LOWDEV?1.5:1.75)*rScale);cv.width=Math.max(1,Math.round(innerWidth*dpr));cv.height=Math.max(1,Math.round(innerHeight*dpr));cv.style.width=innerWidth+'px';cv.style.height=innerHeight+'px';S=Math.min(innerWidth/1000,innerHeight/620);UIS=Math.max(.64,Math.min(1,Math.min(innerWidth/980,innerHeight/560)));try{document.documentElement.style.setProperty("--uis",UIS.toFixed(3));if(typeof uisApply=="function")uisApply()}catch(e){}}
 addEventListener('resize',rs);rs();
 
 /* ===== SOUND ENGINE: decoded sample bank, per-sound mix, distance + stereo placement ===== */
@@ -789,7 +799,7 @@ function netStatus(now){if(now-stT<400)return;stT=now;let t='';const N=NC;
   rc.textContent='ROOM '+roomCode+' \u00b7 '+n+' online'+(!sim&&N.rtt?' \u00b7 '+Math.round(N.rtt)+' ms'+(net&&net.path?' \u00b7 '+net.path:''):'')}}
 
 /* ---- session ---- */
-function start(mode,room){try{window.BFX&&BFX.reset()}catch(x){}audioInit();setTimeout(()=>sfx('ui',{j:0}),80);myName=$('nm').value.trim().slice(0,12)||'Player';try{localStorage.setItem('ar-name',myName)}catch(e){}try{ARA.profile()}catch(e){}
+function start(mode,room){window.CSK_INMATCH=1;try{window.BFX&&BFX.reset()}catch(x){}audioInit();setTimeout(()=>sfx('ui',{j:0}),80);myName=$('nm').value.trim().slice(0,12)||'Player';try{localStorage.setItem('ar-name',myName)}catch(e){}try{ARA.profile()}catch(e){}
  $('menu').style.display='none';$('pz').hidden=false;pzPos();t0=performance.now();
  if('ontouchstart' in window||(window.matchMedia&&window.matchMedia('(pointer:coarse)').matches))ST.on=1;
  if('ontouchstart' in window){try{const d=document.documentElement,pr=(d.requestFullscreen||d.webkitRequestFullscreen).call(d);Promise.resolve(pr).then(()=>screen.orientation.lock('landscape')).catch(()=>{})}catch(e){}}
@@ -948,14 +958,14 @@ function render(dt,now){if(snap.lv&&(snap.lv!=LV||(!sim&&snap.ux!==undefined&&(s
   cx.strokeStyle='#5a748a';cx.lineWidth=2;cx.strokeRect(x,y,w,h)}}
  const tm=now/1000;
  if(bf)try{BFX.pads(snap.k,tm)}catch(x){}
- for(const k of snap.k)pickupArt(k,tm);
+ for(const k of snap.k){if(Math.abs(k.x-cam.x)>hw+110||Math.abs(k.y-cam.y)>hh+110)continue;pickupArt(k,tm)}
 
- for(const q of snap.cr||[])crateArt(q,now,q.id==crNear);
- cx.globalAlpha=1;for(const n of snap.n||[]){const sx=Math.cos(now/260+n.id),y=n.y+Math.sin(now/300+n.id)*2;if(bf)try{BFX.coin(n.x,y,now,n.id,n.v>=10)}catch(x){}cx.fillStyle='#ffc83a30';cx.beginPath();cx.arc(n.x,y,15,0,6.28);cx.fill();cx.fillStyle='#0005';cx.beginPath();cx.ellipse(n.x+2,n.y+9,6,2.5,0,0,6.28);cx.fill();n.v>=10?gem(n.x,y,sx):coin(n.x,y,n.v>3?10:8,Math.abs(sx)*.9+.1)}
+ for(const q of snap.cr||[]){if(Math.abs(q.x-cam.x)>hw+120||Math.abs(q.y-cam.y)>hh+120)continue;crateArt(q,now,q.id==crNear)}
+ cx.globalAlpha=1;for(const n of snap.n||[]){if(Math.abs(n.x-cam.x)>hw+40||Math.abs(n.y-cam.y)>hh+60)continue;const sx=Math.cos(now/260+n.id),y=n.y+Math.sin(now/300+n.id)*2;if(bf)try{BFX.coin(n.x,y,now,n.id,n.v>=10)}catch(x){}cx.fillStyle='#ffc83a30';cx.beginPath();cx.arc(n.x,y,15,0,6.28);cx.fill();cx.fillStyle='#0005';cx.beginPath();cx.ellipse(n.x+2,n.y+9,6,2.5,0,0,6.28);cx.fill();n.v>=10?gem(n.x,y,sx):coin(n.x,y,n.v>3?10:8,Math.abs(sx)*.9+.1)}
  for(const b of(!sim&&net?clientBullets(now):snap.b)){const x=b.x+b.vx*age,y=b.y+b.vy*age,l=Math.hypot(b.vx,b.vy);if(bf&&l>0){BFX.bullet(b,x,y,l)}else{cx.strokeStyle=`hsl(${b.h} 95% 75%)`;cx.lineWidth=4;cx.lineCap='round';cx.beginPath();cx.moveTo(x,y);cx.lineTo(x-b.vx/l*28,y-b.vy/l*28);cx.stroke();cx.fillStyle='#fff';cx.beginPath();cx.arc(x,y,3,0,6.28);cx.fill()}}
  if(lockId){const q=snap.p.find(p=>p.id==lockId)||(snap.t||[]).find(t=>'T'+t.id==lockId);if(q){cx.strokeStyle='#ff4a3a';cx.lineWidth=2;cx.setLineDash([6,5]);cx.lineDashOffset=-now/50;cx.beginPath();cx.arc((views[q.id]||q).x,(views[q.id]||q).y,R+12,0,6.28);cx.stroke();cx.setLineDash([])}}
  for(const t of snap.t||[])turretArt(t,now,m);for(const b of snap.bm||[])bombArt(b,now,m);
- for(const p of snap.p){const v=views[p.id];if(!p.al){corpse(v,p);continue}
+ for(const p of snap.p){const v=views[p.id];if(Math.abs(v.x-cam.x)>hw+170||Math.abs(v.y-cam.y)>hh+170)continue;if(!p.al){corpse(v,p);continue}
   if(bf)BFX.under(p,v,now);
   for(const t of v.tr){cx.globalAlpha=t.l*1.5;cx.fillStyle=`hsl(${p.hue} 90% 62%)`;cx.beginPath();cx.arc(t.x,t.y,R,0,6.28);cx.fill()}
   cx.globalAlpha=p.inv>0&&((now/90)|0)%2?.45:1;

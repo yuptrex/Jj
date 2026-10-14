@@ -42,7 +42,7 @@ function whenSrc(cb){if(bg.getAttribute('src'))return cb();var mo=new MutationOb
       });
       var mq=matchMedia('(prefers-reduced-motion:reduce)'),last=0;
       function frame(ms){requestAnimationFrame(frame);
-        if(ms-last<33||document.hidden||mq.matches||!cv.offsetParent)return;last=ms;var t=ms/1000;
+        if(window.CSK_INMATCH||ms-last<33||document.hidden||mq.matches||!cv.offsetParent)return;last=ms;var t=ms/1000;
         for(var n=0;n<C.length;n++){var c=C[n],o=c.o.data,w=c.w,h=c.h,om=6.2832/c.T;
           for(var y=0;y<h;y++){var gy=c.y0+y,dx=c.a*Math.sin(om*t+c.f+gy*.011),dy=1.6*Math.sin(om*t*1.3+c.f+3);
             for(var x=0;x<w;x++){var q=c.wt[y*w+x],oi=(y*w+x)*4;

@@ -34,7 +34,7 @@ function start(k){var cfg=SW[k],root=document.querySelector(cfg.root);if(!root)r
  function size(){var r=cv.getBoundingClientRect(),d=Math.min(window.devicePixelRatio||1,LOW?1:1.5);W=Math.max(1,r.width);H=Math.max(1,r.height);cv.width=W*d;cv.height=H*d;x.setTransform(d,0,0,d,0,0)}
  size();addEventListener('resize',size);
  function tick(t){var dt=Math.min(.05,(t-last)/1000||.016);last=t;
-  if(document.hidden||!cv.offsetParent||document.body.classList.contains('noanim')){x.clearRect(0,0,W,H);P.length=0;setTimeout(function(){requestAnimationFrame(tick)},300);return}
+  if(window.CSK_INMATCH||document.hidden||!cv.offsetParent||document.body.classList.contains('noanim')){x.clearRect(0,0,W,H);P.length=0;setTimeout(function(){requestAnimationFrame(tick)},300);return}
   var sx=W/cfg.W,sy=H/cfg.H,u=Math.min(sx,sy);
   cfg.s.forEach(function(s,i){acc[i]+=dt*rate;while(acc[i]>=1&&P.length<cap){acc[i]--;var f=Math.random();
    P.push({x:(s.a[0]+(s.b[0]-s.a[0])*f)*sx,y:(s.a[1]+(s.b[1]-s.a[1])*f)*sy,vx:(Math.random()-.5)*10*u,vy:-(26+Math.random()*30)*u,l:0,L:1.6+Math.random()*1.6,r:(10+Math.random()*14)*u,i:i,w:Math.random()*6})}acc[i]=Math.min(acc[i],1)});
