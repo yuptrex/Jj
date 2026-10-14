@@ -749,19 +749,51 @@ $('rc').onclick=()=>{const u=/^https?:/.test(location.protocol)?location.origin+
 /* ---- layout editor: drag a button to move it, pick it and use Size to scale it; every change is saved to localStorage at once ---- */
 const EDK=[['joy','MOVE','#c9d4dc88',60],['fire','FIRE','#ff5d4acc',56],['dash','DASH','#ffb02ecc',34],['rel','RELOAD','#59b8ffcc',28],['trt','TURRET','#4ae0c0cc',30],['bmb','BOMB','#ff7a3acc',30],['opn','OPEN','#ffb02ecc',34],['swa','SWAP','#c58bffcc',30],['lot','LOOT LIST','#ffd24acc',44]],ec=$('ec'),ex=ec.getContext('2d');
 let edSel='fire',edDrag=null;const EDS={fire:'attack',dash:'dash',rel:'reload',trt:'shield',bmb:'bomb'};
-const edPos=k=>{const l=LY[k],d=EDK.find(q=>q[0]==k);return{x:l.x*innerWidth,y:l.y*innerHeight,r:d[3]*l.s*UIS}};
+const EDBOX={opn:[196,62],swa:[196,62],lot:[330,134]};   /* editor preview sizes of the new OPEN / SWAP pills and the loot panel (centre-anchored, like the real ones) */
+const edPos=k=>{const l=LY[k],d=EDK.find(q=>q[0]==k),q=l.s*UIS,b=EDBOX[k];return{x:l.x*innerWidth,y:l.y*innerHeight,r:d[3]*q,q,w:b?b[0]*q:0,h:b?b[1]*q:0}};
+const EDI={};function edIc(n,col){const k=n+col;let i=EDI[k];if(!i){i=EDI[k]=new Image();i.onload=()=>{try{edDrawSoon()}catch(e){}};i.src='data:image/svg+xml;charset=utf-8,'+encodeURIComponent(AB_IC[n].replace('<svg ','<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" ').split('currentColor').join(col))}return i}
+function edCh(x,y,w,h,c){ex.beginPath();ex.moveTo(x+c,y);ex.lineTo(x+w,y);ex.lineTo(x+w,y+h-c);ex.lineTo(x+w-c,y+h);ex.lineTo(x,y+h);ex.lineTo(x,y+c);ex.closePath()}
+function edRR(x,y,w,h,r){ex.beginPath();ex.moveTo(x+r,y);ex.arcTo(x+w,y,x+w,y+h,r);ex.arcTo(x+w,y+h,x,y+h,r);ex.arcTo(x,y+h,x,y,r);ex.arcTo(x,y,x+w,y,r);ex.closePath()}
+/* same look as the in-game OPEN / SWAP buttons (.ab) and the supply-crate panel (#crp) */
+function edPill(p,c,ic,title,sub){const q=p.q,x=p.x-p.w/2,y=p.y-p.h/2,F='bold %px "Rajdhani","Trebuchet MS",sans-serif';
+ edCh(x,y,p.w,p.h,13*q);ex.fillStyle=c;ex.fill();
+ const g2=ex.createLinearGradient(x,y,x+p.w,y+p.h);g2.addColorStop(0,'#1c2a36');g2.addColorStop(.7,'#0a1017');
+ edCh(x+2*q,y+2*q,p.w-4*q,p.h-4*q,11*q);ex.fillStyle=g2;ex.fill();
+ const bs=44*q,bx=x+10*q,by=p.y-bs/2;edRR(bx,by,bs,bs,10*q);ex.fillStyle=c;ex.fill();
+ const im=edIc(ic,'#0b1015');if(im.complete&&im.naturalWidth)ex.drawImage(im,bx+bs*.18,by+bs*.18,bs*.64,bs*.64);
+ ex.textAlign='left';ex.textBaseline='alphabetic';ex.fillStyle='#fff';ex.font=F.replace('%',Math.round(17*q));ex.fillText(title,bx+bs+12*q,p.y-1*q);
+ ex.fillStyle='#c3d1da';ex.font=F.replace('%',Math.round(12*q)).replace('bold ','600 ');ex.fillText(sub,bx+bs+12*q,p.y+17*q);ex.textAlign='center'}
+function edLoot(p,c){const q=p.q,x=p.x-p.w/2,y=p.y-p.h/2;
+ edRR(x,y,p.w,p.h,16*q);const g2=ex.createLinearGradient(0,y,0,y+p.h);g2.addColorStop(0,'#1a242f');g2.addColorStop(1,'#090e13');ex.fillStyle=g2;ex.fill();ex.strokeStyle=c+'aa';ex.lineWidth=1.5;ex.stroke();
+ const bs=34*q,bx=x+12*q,by=y+10*q;edRR(bx,by,bs,bs,9*q);ex.fillStyle=c;ex.fill();const im=edIc('crate','#0b1015');if(im.complete&&im.naturalWidth)ex.drawImage(im,bx+bs*.16,by+bs*.16,bs*.68,bs*.68);
+ ex.textAlign='left';ex.textBaseline='alphabetic';ex.fillStyle='#fff';ex.font='bold '+Math.round(14*q)+'px "Rajdhani","Trebuchet MS",sans-serif';ex.fillText('SUPPLY CRATE',bx+bs+10*q,by+14*q);
+ ex.fillStyle='#aebdc7';ex.font='600 '+Math.round(11*q)+'px "Rajdhani","Trebuchet MS",sans-serif';ex.fillText('Tap an item to take it',bx+bs+10*q,by+29*q);
+ const dw=58*q,dh=26*q,dx=x+p.w-dw-12*q,dy=y+14*q;edRR(dx,dy,dw,dh,8*q);ex.fillStyle='#ffffff14';ex.fill();ex.strokeStyle='#ffffff30';ex.lineWidth=1;ex.stroke();
+ ex.textAlign='center';ex.fillStyle='#fff';ex.font='bold '+Math.round(11*q)+'px "Rajdhani","Trebuchet MS",sans-serif';ex.fillText('DONE',dx+dw/2,dy+dh/2+4*q);
+ const T=[['hp','MEDKIT','+40 HP','#5fd37a'],['shield','SHIELD','+50 shield','#59b8ff'],['ammo','AMMO','+22 rounds','#ffc83a']],tw=94*q,th=64*q,gp=(p.w-24*q-tw*3)/2;
+ T.forEach((t,i)=>{const tx=x+12*q+i*(tw+gp),ty=y+p.h-th-10*q;edRR(tx,ty,tw,th,10*q);const g3=ex.createLinearGradient(0,ty,0,ty+th);g3.addColorStop(0,t[3]+'38');g3.addColorStop(1,'#0f161d');ex.fillStyle=g3;ex.fill();
+  ex.fillStyle=t[3];ex.fillRect(tx+8*q,ty,tw-16*q,3*q);
+  const cr=11*q;ex.beginPath();ex.arc(tx+tw/2,ty+19*q,cr,0,6.28);ex.fill();const ii=edIc(t[0],'#0b1015');if(ii.complete&&ii.naturalWidth)ex.drawImage(ii,tx+tw/2-cr*.62,ty+19*q-cr*.62,cr*1.24,cr*1.24);
+  ex.fillStyle='#fff';ex.font='bold '+Math.round(10*q)+'px "Rajdhani","Trebuchet MS",sans-serif';ex.fillText(t[1],tx+tw/2,ty+43*q);ex.fillStyle='#c3d1da';ex.font='600 '+Math.round(9.5*q)+'px "Rajdhani","Trebuchet MS",sans-serif';ex.fillText(t[2],tx+tw/2,ty+56*q)});
+ ex.textAlign='center'}
 function edSync(){$('esz').value=Math.round(LY[edSel].s*100);$('eop').value=Math.round(LYO*100);$('en').textContent=EDK.find(q=>q[0]==edSel)[1]+' selected \u2013 drag to move'}
 function edDraw(){if(ec.width!=innerWidth||ec.height!=innerHeight){ec.width=innerWidth;ec.height=innerHeight}const W=ec.width,H=ec.height;
  ex.globalAlpha=1;ex.fillStyle='#0b1015';ex.fillRect(0,0,W,H);ex.strokeStyle='#1a2530';ex.lineWidth=1;ex.beginPath();for(let x=0;x<W;x+=50){ex.moveTo(x,0);ex.lineTo(x,H)}for(let y=0;y<H;y+=50){ex.moveTo(0,y);ex.lineTo(W,y)}ex.stroke();
  ex.fillStyle='#ffffff10';ex.font='bold 22px "Trebuchet MS",sans-serif';ex.textAlign='center';ex.fillText('GAME SCREEN',W/2,H/2);
- for(const d of EDK){const p=edPos(d[0]);ex.globalAlpha=LYO;const si=BI[EDS[d[0]]];if(si&&si.naturalWidth){const sc=p.r*1.08/(si.naturalWidth/2),w=si.naturalWidth*sc,h=si.naturalHeight*sc;ex.drawImage(si,p.x-w/2,p.y-h/2,w,h)}else{ex.fillStyle=d[2];ex.beginPath();ex.arc(p.x,p.y,p.r,0,6.28);ex.fill();ex.lineWidth=2;ex.strokeStyle='#fff';ex.stroke()}
-  if(d[0]=='joy'){ex.fillStyle='#fff8';ex.beginPath();ex.arc(p.x,p.y,p.r*.37,0,6.28);ex.fill()}
-  ex.globalAlpha=1;ex.fillStyle='#fff';ex.font='bold '+Math.max(10,p.r*.28|0)+'px "Trebuchet MS",sans-serif';ex.textBaseline='middle';if(!EDS[d[0]])ex.fillText(d[1],p.x,d[0]=='joy'?p.y+p.r+14:p.y);ex.textBaseline='alphabetic';
-  if(d[0]==edSel){ex.strokeStyle='#ffb02e';ex.lineWidth=4;ex.setLineDash([8,6]);ex.beginPath();ex.arc(p.x,p.y,p.r+8,0,6.28);ex.stroke();ex.setLineDash([])}}}
+ for(const d of EDK){const p=edPos(d[0]),k=d[0];ex.globalAlpha=LYO;let art=0;
+  if(k=='joy'&&IPAD.naturalWidth){const pw=p.r*2.39;ex.drawImage(IPAD,p.x-pw/2,p.y-pw*.458,pw,pw);if(IKNOB.naturalWidth){const kw=p.r*.9;ex.drawImage(IKNOB,p.x-kw/2,p.y-kw/2,kw,kw)}art=1}
+  else if(EDS[k]){const si=BI[EDS[k]];if(si&&si.naturalWidth){const sc=p.r*1.08/(si.naturalWidth/2),w=si.naturalWidth*sc,h=si.naturalHeight*sc;ex.drawImage(si,p.x-w/2,p.y-h/2,w,h);art=1}}
+  else if(k=='opn'){edPill(p,d[2].slice(0,7),'crate','OPEN','Supply crate \u00b7 3 items');art=1}
+  else if(k=='swa'){edPill(p,d[2].slice(0,7),'gun','SWAP','for Rifle');art=1}
+  else if(k=='lot'){edLoot(p,'#ffb02e');art=1}
+  if(!art){ex.fillStyle=d[2];ex.beginPath();ex.arc(p.x,p.y,p.r,0,6.28);ex.fill();ex.lineWidth=2;ex.strokeStyle='#fff';ex.stroke();
+   ex.globalAlpha=1;ex.fillStyle='#fff';ex.font='bold '+Math.max(10,p.r*.28|0)+'px "Trebuchet MS",sans-serif';ex.textBaseline='middle';ex.fillText(d[1],p.x,k=='joy'?p.y+p.r+14:p.y);ex.textBaseline='alphabetic'}
+  ex.globalAlpha=1;
+  if(k==edSel){ex.strokeStyle='#ffb02e';ex.lineWidth=4;ex.setLineDash([8,6]);if(p.w){edRR(p.x-p.w/2-8,p.y-p.h/2-8,p.w+16,p.h+16,16);ex.stroke()}else{ex.beginPath();ex.arc(p.x,p.y,p.r+8,0,6.28);ex.stroke()}ex.setLineDash([])}}}
 function edOpen(){loadLY();LY=Object.assign(DEF(),cp(LY||{}));$('ed').hidden=false;edSync();edDraw()}
 window.CSKEditLayout=()=>{try{sfx('ui',{j:0})}catch(e){}edOpen()};
 let edRAF=0;function edDrawSoon(){if(edRAF)return;edRAF=requestAnimationFrame(()=>{edRAF=0;edDraw()})}
-ec.onpointerdown=e=>{let best=null,bd=1e9;for(const d of EDK){const p=edPos(d[0]),q=Math.hypot(e.clientX-p.x,e.clientY-p.y);if(q<p.r+14&&q<bd){bd=q;best=d[0]}}
+ec.onpointerdown=e=>{let best=null,bd=1e9;for(const d of EDK){const p=edPos(d[0]),q=Math.hypot(e.clientX-p.x,e.clientY-p.y),hit=p.w?(Math.abs(e.clientX-p.x)<p.w/2+10&&Math.abs(e.clientY-p.y)<p.h/2+10):q<p.r+14;if(hit&&q<bd){bd=q;best=d[0]}}
  if(best){edSel=best;edDrag={k:best,ox:e.clientX-LY[best].x*innerWidth,oy:e.clientY-LY[best].y*innerHeight};try{ec.setPointerCapture(e.pointerId)}catch(x){}edSync();edDrawSoon()}};
 ec.onpointermove=e=>{if(!edDrag)return;const l=LY[edDrag.k];l.x=cl((e.clientX-edDrag.ox)/innerWidth,.04,.96);l.y=cl((e.clientY-edDrag.oy)/innerHeight,.2,.96);edDrawSoon()};
 ec.onpointerup=ec.onpointercancel=()=>{if(edDrag){edDrag=null;saveLY()}};
@@ -782,14 +814,25 @@ fastTap($('pz'),()=>{sfx('ui',{j:0});setPause(true)});fastTap($('pzr'),()=>{sfx(
 fastTap($('pzh'),()=>{try{net&&net.send({t:'bye',id:myId})}catch(e){}setTimeout(()=>location.reload(),60)});
 addEventListener('resize',pzPos);document.addEventListener('visibilitychange',()=>{if(document.hidden&&sim&&!net)setPause(true)});
 let last=0,acc=0,sT=0,iT=0,AGE=0,F60=1,snapOk=0;
-/* ---- quality lock (replaces the old adaptive "90 fps governor") ----
-   The old governor lowered render resolution (100% -> 50%) and switched off glows/shadows whenever frames ran
-   slow. That is what made text turn blurry on mobile Chrome. Quality is now LOCKED: resolution scale is always
-   1.0 (full device pixel ratio, capped at 2) and glows/shadows are always on. perfGov() is kept as a stub so
-   existing calls and the FPS read-out still work, but it never changes quality. */
+/* ---- adaptive effects governor ----
+   Resolution/DPR is intentionally LOCKED (that's what caused the old blurry-text-on-mobile-Chrome bug) and is
+   never touched here. What IS adaptive: window.GFXQ (shadow blur / glow / ambient fx tier, 0..2) gets stepped
+   DOWN automatically under sustained low frame rate, and back UP once things recover. The player's own Settings
+   choice (o.gfx, in the IIFE near the bottom of this file) is the ceiling this never exceeds -- if someone picks
+   "Low" by hand we never raise it. This only ever lowers effort, never resolution, so there's no blur regression. */
 const PERF={tiers:[1],ti:0,buf:[],last:0,hold:0,bad:0,good:0,noUp:0,upAt:0,disp:1e9};
+let gfxCeil=2,gfxAuto=2;
 function perfTier(){}
-function perfGov(){}
+function perfGov(now){
+ if(!PERF.last){PERF.last=now;return}
+ const fdt=now-PERF.last;PERF.last=now;if(fdt<=0||fdt>250)return;   // ignore tab-hidden / huge gaps
+ const fps=1000/fdt;PERF.buf.push(fps);if(PERF.buf.length>45)PERF.buf.shift();
+ if(PERF.buf.length<30)return;   // need ~0.5s of samples before deciding anything
+ const avg=PERF.buf.reduce((a,b)=>a+b,0)/PERF.buf.length;
+ if(avg<42){PERF.good=0;if(++PERF.bad>60&&gfxAuto>0){gfxAuto--;PERF.bad=0;PERF.buf.length=0;applyGfx()}}
+ else if(avg>54){PERF.bad=0;if(++PERF.good>180&&gfxAuto<gfxCeil){gfxAuto++;PERF.good=0;PERF.buf.length=0;applyGfx()}}
+ else{PERF.bad=0;PERF.good=0}}
+function applyGfx(){window.GFXQ=gfxAuto;PERF.ti=gfxAuto<gfxCeil?1:0}
 function frame(now){const dt=Math.min(.05,(now-last)/1000);try{window.AQ&&AQ((now-last)/1000,now)}catch(e){}last=now;try{perfGov(now)}catch(x){}try{musicTick(dt,now)}catch(x){}
   if(sim&&!net){if(paused){acc=0;AGE=0}else{acc+=dt;const m=sim.p[myId];let stp=0;while(acc>=TICK){if(m)m.in=readInput();sim.step(TICK);acc-=TICK;stp=1}
    if(stp||!snapOk){snap=sim.snap();snapAt=now;snapOk=1}   /* build a snapshot only when the 60 Hz sim actually advanced */
@@ -860,10 +903,10 @@ function render(dt,now){if(snap.lv&&snap.lv!=LV)setLevel(snap.lv);if(!sim&&net)n
   if(p.rel>0){cx.strokeStyle='#fff';cx.lineWidth=3;cx.beginPath();cx.arc(v.x,v.y,R+13,-1.57,-1.57+6.28*(1-p.rel/WP[p.w].rel));cx.stroke()}
   if(bf)BFX.tag(p,v,now,dt);else{cx.fillStyle='#000a';cx.fillRect(v.x-22,v.y-R-18,44,6);cx.fillStyle=v.hs>50?'#5fd37a':v.hs>25?'#ffcf4a':'#ff6a5f';cx.fillRect(v.x-22,v.y-R-18,44*Math.max(0,v.hs)/100,6);
   cx.fillStyle='#e8eef2';cx.font='12px "Trebuchet MS",sans-serif';cx.textAlign='center';cx.textBaseline='alphabetic';cx.fillText(p.name,v.x,v.y-R-24)}}
- if(bf)BFX.rings(rings,dt);else{for(const r of rings){r.l-=dt;r.r+=(r.g||160)*dt;cx.globalAlpha=Math.max(0,r.l/r.m);cx.strokeStyle=r.c;cx.lineWidth=3;cx.beginPath();cx.arc(r.x,r.y,Math.max(0,r.r),0,6.28);cx.stroke()}}rings=rings.filter(r=>r.l>0);
+ if(bf)BFX.rings(rings,dt);else{for(const r of rings){r.l-=dt;r.r+=(r.g||160)*dt;cx.globalAlpha=Math.max(0,r.l/r.m);cx.strokeStyle=r.c;cx.lineWidth=3;cx.beginPath();cx.arc(r.x,r.y,Math.max(0,r.r),0,6.28);cx.stroke()}}rings=rings.filter(r=>r.l>0);if(rings.length>80)rings.splice(0,rings.length-80);
  cx.save();cx.globalCompositeOperation='lighter';for(const b of beams){b.l-=dt;const k=Math.max(0,b.l/b.m),w=36*(k+.3),g=cx.createLinearGradient(0,b.y-320,0,b.y);g.addColorStop(0,`hsla(${b.h},95%,70%,0)`);g.addColorStop(1,`hsla(${b.h},95%,70%,${.6*k})`);cx.fillStyle=g;cx.fillRect(b.x-w/2,b.y-320,w,320)}cx.restore();beams=beams.filter(b=>b.l>0);
- if(bf)BFX.parts(parts,dt);else{for(const q of parts){q.l-=dt;q.x+=q.vx*dt;q.y+=q.vy*dt;q.vx*=.93;q.vy*=.93;cx.globalAlpha=Math.max(0,q.l/q.m);cx.fillStyle=q.c;cx.fillRect(q.x-q.s/2,q.y-q.s/2,q.s,q.s)}}cx.globalAlpha=1;parts=parts.filter(q=>q.l>0);
-if(bf)BFX.texts(texts,dt);else{for(const q of texts){q.l-=dt;q.y-=38*dt;cx.globalAlpha=Math.min(1,q.l*2.5);cx.fillStyle=q.c;cx.strokeStyle='#000b';cx.lineWidth=3;cx.font='bold 17px "Trebuchet MS",sans-serif';cx.textAlign='center';cx.strokeText(q.t,q.x,q.y);cx.fillText(q.t,q.x,q.y)}}texts=texts.filter(q=>q.l>0);cx.globalAlpha=1;
+ if(bf)BFX.parts(parts,dt);else{for(const q of parts){q.l-=dt;q.x+=q.vx*dt;q.y+=q.vy*dt;q.vx*=.93;q.vy*=.93;cx.globalAlpha=Math.max(0,q.l/q.m);cx.fillStyle=q.c;cx.fillRect(q.x-q.s/2,q.y-q.s/2,q.s,q.s)}}cx.globalAlpha=1;parts=parts.filter(q=>q.l>0);if(parts.length>(gfxAuto<1?260:gfxAuto<2?420:650))parts.splice(0,parts.length-(gfxAuto<1?260:gfxAuto<2?420:650));
+if(bf)BFX.texts(texts,dt);else{for(const q of texts){q.l-=dt;q.y-=38*dt;cx.globalAlpha=Math.min(1,q.l*2.5);cx.fillStyle=q.c;cx.strokeStyle='#000b';cx.lineWidth=3;cx.font='bold 17px "Trebuchet MS",sans-serif';cx.textAlign='center';cx.strokeText(q.t,q.x,q.y);cx.fillText(q.t,q.x,q.y)}}texts=texts.filter(q=>q.l>0);if(texts.length>60)texts.splice(0,texts.length-60);cx.globalAlpha=1;
  if(bf)try{BFX.post(now,dt,m,hw,hh)}catch(x){if(!window.__bfE3){window.__bfE3=1;console.error('BFX post',x)}}
  try{flyDraw(dt)}catch(x){}try{swapUI(m,mv)}catch(x){}try{crUI(m,mv)}catch(x){}
  hud(m,now,dt)}
@@ -1522,7 +1565,7 @@ apply();
 const tips=['Press B to drop a bomb, press B again to detonate it.','Dash with Shift to dodge incoming fire.','Spend coins on weapon upgrades with 1-4.','Hold Tab to see the full scoreboard.','Bombs go dead when they leave your screen, so keep them in view.'];let ti=Math.random()*tips.length|0;const tp=g('tip');
 function tip(){tp.style.opacity=0;setTimeout(()=>{tp.textContent='Tip: '+tips[ti++%tips.length];tp.style.opacity=1},300)}tip();setInterval(tip,6000);
 const fp=g('fps');let fr=0,ft=performance.now();
-(function loop(t){fr++;if(t-ft>=1000){fp.textContent=fr+' FPS'+(PERF.ti?' \u00b7 res '+Math.round(rScale*100)+'%':'');fr=0;ft=t}
+(function loop(t){fr++;if(t-ft>=1000){fp.textContent=fr+' FPS'+(PERF.ti?' \u00b7 fx '+['low','med','high'][gfxAuto]:'');fr=0;ft=t}
  requestAnimationFrame(loop)})(performance.now());
 })();
 /* in-game home scene: real in-game characters, names, terrain and pickups drawn on the game canvas */
@@ -1575,8 +1618,11 @@ function loop(t){if(M.style.display=='none')return;try{hm(t)}catch(e){if(!window
 })();
 /* settings: full-screen grid, switches, segmented controls, game-feel feedback */
 (function(){const g=id=>document.getElementById(id),L=(k,v)=>{try{if(v===undefined)return JSON.parse(localStorage.getItem(k));localStorage.setItem(k,JSON.stringify(v))}catch(e){return null}};
-const o=Object.assign({gfx:2,shk:2,fx:2,hf:true,kf:true,an:true,tp:true,dr:true},L('ar-set2')||{}),$$=q=>document.querySelectorAll(q);
-function ap(){window.GFXQ=o.gfx;window.AR_SHK=[0,.5,1][o.shk];window.AR_FX=[.35,.7,1][o.fx];window.AR_HF=o.hf;window.AR_DR=o.dr;g('kf').style.display=o.kf?'':'none';document.body.classList.toggle('noanim',!o.an);g('tip').style.visibility=o.tp?'':'hidden';
+const DEF_GFX=(()=>{   // first-run-only default: start lower on signals of a weak device, never overrides a saved choice
+ try{const dm=navigator.deviceMemory,hc=navigator.hardwareConcurrency||4,mob=/Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
+  if((dm&&dm<=2)||hc<=2)return 0;if(mob||(dm&&dm<=4)||hc<=4)return 1;return 2}catch(e){return 2}})();
+const o=Object.assign({gfx:DEF_GFX,shk:2,fx:2,hf:true,kf:true,an:true,tp:true,dr:true},L('ar-set2')||{}),$$=q=>document.querySelectorAll(q);
+function ap(){gfxCeil=o.gfx;gfxAuto=gfxCeil;PERF.buf.length=0;PERF.bad=0;PERF.good=0;window.GFXQ=gfxAuto;window.AR_SHK=[0,.5,1][o.shk];window.AR_FX=[.35,.7,1][o.fx];window.AR_HF=o.hf;window.AR_DR=o.dr;g('kf').style.display=o.kf?'':'none';document.body.classList.toggle('noanim',!o.an);g('tip').style.visibility=o.tp?'':'hidden';
  $$('#st [data-o]').forEach(b=>b.setAttribute('aria-pressed',o[b.dataset.o]?'true':'false'));$$('#st [data-seg]').forEach(r=>[...r.children].forEach(b=>b.setAttribute('aria-pressed',+b.dataset.i==o[r.dataset.seg]?'true':'false')));
  g('o-mute').setAttribute('aria-pressed',mute?'false':'true');L('ar-set2',o)}
 $$('#st [data-o]').forEach(b=>b.onclick=()=>{o[b.dataset.o]=!o[b.dataset.o];ap()});

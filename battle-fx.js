@@ -393,6 +393,7 @@ function ambient(now,dt,hw,hh){
  cx.restore()}
 function flashesDraw(dt){
  cx.save();cx.globalCompositeOperation='lighter';
+ if(flashes.length>24)flashes.splice(0,flashes.length-24);   // radial-gradient flashes are costly; cap survives even a multi-kill spike
  for(let i=flashes.length-1;i>=0;i--){const f=flashes[i];f.l-=dt;if(f.l<=0){flashes.splice(i,1);continue}
   const k=f.l/f.m;cx.globalAlpha=Math.min(1,k*1.3);const r=f.r*(1.15-.3*k);cx.drawImage(glowSpr(f.c),f.x-r,f.y-r,r*2,r*2)}
  cx.restore()}

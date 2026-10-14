@@ -178,3 +178,8 @@
   #csk-splash .csk-splash-mark{animation:none}
   #csk-splash .csk-splash-bar i{animation:none;width:100%}
 }
+
+/* layout editor: the toolbar sits over the top of the screen where the loot panel lives, so let taps fall through its empty gaps
+   and keep it see-through, so the loot panel preview behind it can be seen and dragged */
+#ep{pointer-events:none;background:linear-gradient(180deg,#141e28b0,#0b121ab0)!important}
+#ep>*{pointer-events:auto}

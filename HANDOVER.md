@@ -491,3 +491,9 @@ The arena (floor, walls, pickups, bullets, particles, lighting) was dull; it is 
   fails the game simply keeps the original characters.
 - `game.js` changes are small and marked: `drawChar` hook, `gfx()` / `padSpr()`, crate / medkit / ammo / shield art with
   vector fallbacks, `AQ` call in `frame()`.
+
+## v43 — Button layout editor shows the new button look
+- The editor preview now uses the in-game art for every control: joystick pad + knob, and OPEN / SWAP pills and the supply-crate
+  loot panel drawn in the same style as the live HUD (`edPill` / `edLoot` in `game.js`). FIRE / DASH / RELOAD / TURRET / BOMB already did.
+- OPEN / SWAP / LOOT LIST are hit-tested by their rectangle instead of a circle.
+- The editor toolbar is see-through and passes taps through its gaps so the loot panel behind it can be dragged.
