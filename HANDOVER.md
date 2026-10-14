@@ -498,7 +498,7 @@ The arena (floor, walls, pickups, bullets, particles, lighting) was dull; it is 
 - OPEN / SWAP / LOOT LIST are hit-tested by their rectangle instead of a circle.
 - The editor toolbar is see-through and passes taps through its gaps so the loot panel behind it can be dragged.
 
-## v44 - new map art
+## v44 - new map art (v45: floor baked at final size, cheaper walls - fixes lag)
 - Floor: `map-floor.jpg` (your tile texture, cropped to an exact grid period) tiled across the whole 4800x3200 arena, 96 world units per cell.
 - Props: `map-objs.webp` atlas cut from your sprite sheet (pillars, crates, barrels, sandbags, spikes, banners, tents, wells, dragon statues, bushes, rocks). Placement is in `setLevel()` in game.js (own PRNG, so all players see the same map).
 - Walls: same collision rects as before; drawn as dark stone slabs with pillar sprites. Tower blocks on short square walls.

@@ -83,7 +83,7 @@ function floor(now,dt,hw,hh){
  const vis=(x,y,r)=>x+r>x0&&x-r<x1&&y+r>y0&&y-r<y1;
  cx.fillStyle='#0a1424';cx.fillRect(x0,y0,x1-x0,y1-y0);
  if(ART.ready){
-  if(!ART.fp){ART.fp=cx.createPattern(ART.floor,'repeat');try{ART.fp.setTransform(new DOMMatrix().scale(ART.cell/126.9))}catch(e){}}
+  if(!ART.fp){const k=ART.cell/126.9,c=mk(Math.round(ART.floor.width*k),Math.round(ART.floor.height*k)),g=c.getContext('2d');g.imageSmoothingQuality='high';g.drawImage(ART.floor,0,0,c.width,c.height);ART.fp=cx.createPattern(c,'repeat')} /* baked once at final size: no per-frame pattern scaling */
   cx.fillStyle=ART.fp;cx.fillRect(x0,y0,x1-x0,y1-y0)}
  // map props (bushes, rocks, crates, banners, statues ...) sit on the floor, y-sorted
  if(ART.ready)for(const d of DEC){if(!vis(d.x,d.y,110))continue;
@@ -110,11 +110,8 @@ function walls(now,hw,hh){
  const L=[];for(const w of WALLS){if(w[0]>x1||w[0]+w[2]<x0||w[1]>y1||w[1]+w[3]<y0)continue;L.push(w)}
  cx.fillStyle='rgba(0,0,10,.34)';for(const[x,y,w,h]of L)cx.fillRect(x+8,y+12,w+3,h+FH+3);
  for(const[x,y,w,h]of L){
-  let g=cx.createLinearGradient(0,y+h,0,y+h+FH);g.addColorStop(0,'#26324d');g.addColorStop(1,'#0c1220');
-  cx.fillStyle=g;cx.fillRect(x,y+h,w,FH);
-  g=cx.createLinearGradient(0,y,0,y+h);g.addColorStop(0,'#2b3858');g.addColorStop(1,'#111a2e');cx.fillStyle=g;cx.fillRect(x,y,w,h);
-  cx.fillStyle='rgba(170,190,235,.10)';for(let xx=x+22;xx<x+w-10;xx+=44)cx.fillRect(xx,y+4,1.5,h-8);
-  for(let yy=y+22;yy<y+h-10&&h>60;yy+=44)cx.fillRect(x+4,yy,w-8,1.5);
+  cx.fillStyle='#1a2338';cx.fillRect(x,y+h,w,FH);cx.fillStyle='#0c1220';cx.fillRect(x,y+h+FH*.55,w,FH*.45);
+  cx.fillStyle='#202b45';cx.fillRect(x,y,w,h);cx.fillStyle='#161f35';cx.fillRect(x,y+h*.5,w,h*.5);
   cx.lineJoin='round';cx.strokeStyle='#a9b2c6';cx.lineWidth=3;cx.strokeRect(x+1.5,y+1.5,w-3,h-3);
   cx.strokeStyle='rgba(225,235,255,.55)';cx.lineWidth=1.2;cx.beginPath();cx.moveTo(x+3,y+h-3);cx.lineTo(x+3,y+3);cx.lineTo(x+w-3,y+3);cx.stroke()}
  if(!ART.ready)return;
