@@ -1,5 +1,6 @@
 /* ============ BOOT GATE: light until login, heavy after ============
    Signed out (no saved account on this device):
+     (knights + item art follow the sound bank: loaded only after login)
      - only the splash + sign-in screen assets are loaded (CSKAssets 'boot' group)
      - the home screen is not rendered (html.csk-pre), so its 1 MB artwork is never fetched or decoded
      - the 2 MB sound bank is not loaded and no audio engine is created
@@ -14,6 +15,11 @@ window.CSK_PRE=pre;if(pre)root.classList.add('csk-pre');
 
 function loadScript(src){return new Promise(function(res,rej){var s=document.createElement('script');s.src=src;s.onload=res;s.onerror=rej;document.head.appendChild(s)})}
 function sounds(){return loadScript('sfx-data.js').then(function(){try{window.CSK_decodeSounds&&window.CSK_decodeSounds()}catch(e){}}).catch(function(){})}
+/* knights + new item art: 8 sprite knights (assigned automatically per player), cape sheet, pickup/crate art.
+   Same rule as the sounds: not fetched until login. If anything fails to load, the match simply keeps the original characters. */
+function knights(){
+ return Promise.all([loadScript('knights-spr.js'),loadScript('knights-cape.js'),loadScript('gfx-items.js')])
+  .then(function(){return loadScript('knights.js')}).catch(function(){})}
 function hero(){var im=document.querySelector('.hs-bg');if(im&&!im.getAttribute('src'))im.src=(window.CSKAssets&&CSKAssets.url('home-art2.jpg'))||'home-art2.jpg'}
 
 /* ---- unlock ---- */
@@ -22,7 +28,7 @@ function finish(){
  if(loaderOn){loaderOn=false;try{CSKLoad.hide()}catch(e){}}}
 function unlock(){
  if(!pre||started)return;started=true;
- var jobs=[sounds()];
+ var jobs=[sounds(),knights()];
  try{jobs.push(CSKAssets.preload(function(){},'main').catch(function(){}))}catch(e){}
  Promise.all(jobs).then(finish,finish);
  setTimeout(finish,30000);   /* never trap the player behind a stalled download */}
@@ -34,7 +40,7 @@ function ensure(){
 window.CSKBoot={unlock:unlock,ensure:ensure,isPre:function(){return pre&&!done}};
 
 document.addEventListener('DOMContentLoaded',function(){
- if(!pre){hero();sounds();return}
+ if(!pre){hero();sounds();knights();return}
  /* first moment Firebase reports a signed-in user */
  var tries=0,iv=setInterval(function(){tries++;
   try{if(window.firebase&&firebase.apps&&firebase.apps.length&&firebase.auth){clearInterval(iv);firebase.auth().onAuthStateChanged(function(u){if(u)unlock()})}}catch(e){}

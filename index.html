@@ -46,7 +46,7 @@
 </div>
 <script src="asset-cache.js"></script>
 <script src="bgm.js"></script>
-<script src="boot-gate.js"></script>   <!-- signed out = light page; everything heavy loads after login -->
+<script src="boot-gate.js?v=42"></script>   <!-- signed out = light page; everything heavy loads after login -->
 <script>
 /* Loading screen progress: real checkpoints are reported by __cskProg(n) between the big script loads below;
    in between, the bar creeps forward so it never looks frozen. It reaches 100% once window "load" fires
@@ -193,7 +193,7 @@
 <script src="home-fx.js"></script><script src="home-anim.js"></script><script src="clouds.js"></script>
 <script src="fullscreen.js"></script>
 <script src="battle-fx.js"></script>
-<link rel="stylesheet" href="victory.css"><script src="victory.js"></script><script src="game.js"></script>
+<link rel="stylesheet" href="victory.css"><script src="victory.js"></script><script src="game.js?v=42"></script><script src="aq.js"></script>
 <script>/* wss:// address of your relay server (see RELAY-DEPLOY.md). Leave empty to use P2P + Firebase only. Can also be set per visit with ?relay=wss://... */
 window.CSK_RELAY_URL="";</script>
 <script src="rtc.js"></script>

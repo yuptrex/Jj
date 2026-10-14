@@ -475,3 +475,19 @@ The arena (floor, walls, pickups, bullets, particles, lighting) was dull; it is 
 - Full screen only after login (`CSKLogin.ready()` -> `CSKFullscreen.allow()`); never on sign-in/sign-up. On every fullscreen/rotation change the page re-fits (resize nudge) so no gaps.
 
 - v37: Settings > Edit layout now opens the editor (`window.CSKEditLayout`; the old code clicked a hidden button that only listens for pointerdown). Save & Close pushes the layout to `users/<uid>/layout` at once; it is restored on login on any device (newest edit wins). Firebase rules must allow read/write of `users/<uid>/layout`.
+
+---
+
+## v42 — Knights + new arena items (from knight_arena_tester.html)
+
+- **8 knights, automatic.** Silver Knight, White Paladin, Black Knight, Royal Guard + the four Gilded versions, each with
+  physics cape and its own weapon art. There is no selection screen: every player / bot gets a knight from its id
+  (`KNT.pick` in `knights.js`), so every screen in a room shows the same knight for the same player.
+- **New item art.** Supply crate, medkit, ammo and shield pickups use the new art (`gfx-items.js`); the hex pickup plates are
+  pre-rendered once per colour (`padSpr` in `game.js`).
+- **Adaptive resolution** (`aq.js`) + render-scale cap 1.75 from the tester, so the heavier knight drawing stays smooth.
+- **Loading.** `knights-spr.js`, `knights-cape.js`, `gfx-items.js`, `knights.js` are loaded by `boot-gate.js` only after login
+  (same rule as the sound bank). Until they finish, `drawChar` and the pickups use the original vector art; if loading
+  fails the game simply keeps the original characters.
+- `game.js` changes are small and marked: `drawChar` hook, `gfx()` / `padSpr()`, crate / medkit / ammo / shield art with
+  vector fallbacks, `AQ` call in `frame()`.
