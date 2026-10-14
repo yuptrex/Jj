@@ -91,6 +91,8 @@ const ASP={"corner": 1.641, "dragon": 1.148, "banner1": 1.9104, "tent": 1.0204, 
 const PCOL={bush:[0.025,0.975,0.019,0.972],bushW:[0.032,0.968,0.032,0.968],bushB:[0.036,0.964,0.037,0.969],rockL:[0.029,0.971,0.025,0.97],rockS:[0.042,0.958,0.041,0.959],rockC:[0.02,0.98,0.014,0.965],crateL:[0.04,0.96,0.014,0.957],crateS:[0.044,0.956,0.056,0.944],barrels:[0.016,0.984,0.04,0.967],sandbags:[0.02,0.98,0.044,0.956],spikes:[0.02,0.98,0.021,0.965],cross:[0.034,0.966,0.031,0.963],banner1:[0.022,0.978,0.012,0.98],banner2:[0.042,0.958,0.012,0.976],banner3:[0.008,0.992,0.042,0.958],tent:[0.016,0.984,0.024,0.976],well:[0.028,0.972,0.026,0.974],dragon:[0.018,0.982,0.02,0.98],pillar:[0.051,0.949,0.043,0.957],block:[0.04,0.96,0.028,0.972]};
 let UX=0; // 1 = this match has solid Ultra HD props (host decides; sent to clients in the snapshot)
 const propRect=(n,x,y,w)=>{const h=w*ASP[n],c=PCOL[n],L=x-w/2,T=y-h+w*.08;return[L+w*c[0],T+h*c[2],w*(c[1]-c[0]),h*(c[3]-c[2]),1]};
+const PSIL={bush:[[0.295,0.705,0.019,0.061],[0.025,0.975,0.061,0.685],[0.124,0.876,0.685,0.873],[0.203,0.797,0.873,0.934],[0.448,0.552,0.934,0.972]],bushW:[[0.473,0.527,0.032,0.059],[0.16,0.84,0.059,0.249],[0.032,0.968,0.249,0.811],[0.165,0.835,0.811,0.935],[0.335,0.665,0.935,0.968]],bushB:[[0.41,0.59,0.037,0.062],[0.036,0.964,0.062,0.747],[0.133,0.867,0.747,0.87],[0.229,0.771,0.87,0.932],[0.367,0.633,0.932,0.969]],rockL:[[0.379,0.621,0.025,0.059],[0.306,0.694,0.059,0.124],[0.199,0.801,0.124,0.248],[0.029,0.971,0.248,0.748],[0.092,0.908,0.748,0.871],[0.238,0.762,0.871,0.97]],rockS:[[0.38,0.62,0.041,0.062],[0.275,0.725,0.062,0.124],[0.042,0.958,0.124,0.745],[0.106,0.894,0.745,0.807],[0.183,0.817,0.807,0.931],[0.387,0.613,0.931,0.959]],rockC:[[0.148,0.852,0.014,0.184],[0.02,0.98,0.184,0.872],[0.109,0.891,0.872,0.936],[0.367,0.633,0.936,0.965]],crateL:[[0.04,0.96,0.014,0.957]],crateS:[[0.044,0.956,0.056,0.935],[0.11,0.89,0.935,0.944]],barrels:[[0.152,0.848,0.04,0.06],[0.016,0.984,0.06,0.934],[0.078,0.922,0.934,0.967]],sandbags:[[0.16,0.84,0.044,0.062],[0.02,0.98,0.062,0.956]],spikes:[[0.102,0.898,0.021,0.183],[0.02,0.98,0.183,0.81],[0.105,0.895,0.81,0.965]],cross:[[0.14,0.86,0.031,0.435],[0.05,0.95,0.435,0.559],[0.034,0.966,0.559,0.963]],banner1:[[0.388,0.612,0.012,0.125],[0.022,0.978,0.125,0.25],[0.187,0.813,0.25,0.688],[0.41,0.59,0.688,0.812],[0.306,0.694,0.812,0.98]],banner2:[[0.406,0.594,0.012,0.124],[0.042,0.958,0.124,0.249],[0.203,0.797,0.249,0.687],[0.413,0.587,0.687,0.811],[0.322,0.678,0.811,0.976]],banner3:[[0.008,0.992,0.042,0.958]],tent:[[0.016,0.984,0.024,0.936],[0.094,0.906,0.936,0.976]],well:[[0.028,0.972,0.026,0.747],[0.098,0.902,0.747,0.873],[0.205,0.795,0.873,0.934],[0.302,0.698,0.934,0.974]],dragon:[[0.314,0.686,0.02,0.062],[0.018,0.982,0.062,0.812],[0.103,0.897,0.812,0.875],[0.175,0.825,0.875,0.98]],pillar:[[0.286,0.714,0.043,0.058],[0.194,0.806,0.058,0.122],[0.051,0.949,0.122,0.496],[0.133,0.867,0.496,0.935],[0.235,0.765,0.935,0.957]],block:[[0.127,0.873,0.028,0.062],[0.04,0.96,0.062,0.934],[0.16,0.84,0.934,0.972]]}; // stepped silhouette of each sprite (fractions of its box): walkable gaps stay walkable, drawn pixels stay solid
+const propRects=(n,x,y,w)=>{const h=w*ASP[n],L=x-w/2,T=y-h+w*.08;return PSIL[n].map(c=>[L+w*c[0],T+h*c[2],w*(c[1]-c[0]),h*(c[3]-c[2]),1])};
 /* pillars / tower blocks standing on a wall rect: [sortY, sprite, anchorX, anchorY(feet), drawWidth] - used for drawing AND collision */
 function wallPillars([x,y,w,h]){const o=[],mn=Math.min(w,h),mx=Math.max(w,h);
  if(mn>=70&&mx<=170){const n=Math.max(1,Math.round(mx/mn)),bw=Math.min(mn*1.2,mx/n*1.25);
@@ -113,6 +115,54 @@ function push(p){for(let it=0;it<5;it++){let mv=0; // several passes: pushed out
 const inWall=(x,y)=>WALLS.some(([a,b,w,h])=>x>a&&x<a+w&&y>b&&y<b+h);
 const hitWall=(x0,y0,x1,y1)=>{const n=Math.max(1,Math.ceil(Math.hypot(x1-x0,y1-y0)/8));for(let i=1;i<=n;i++){const t=i/n;if(inWall(x0+(x1-x0)*t,y0+(y1-y0)*t))return 1}return 0}; // swept test: fast bullets can't skip thin objects
 const rng=()=>{SEED=SEED+0x6D2B79F5|0;let t=Math.imul(SEED^SEED>>>15,1|SEED);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296};
+/* ---- Ultra HD prop layout: designed, mirrored into all four quadrants (no random scatter) ----
+   Rules: lanes stay open (>=62 clear of walls, >=56 between clusters), pickups/crates keep 80 clear, plaza stays open,
+   cover sits where fights happen, camps/graveyards on the outer ring, landmarks (well, dragons) at fixed spots. */
+const PT={
+ supply:{h:[['crateL',0,0],['crateS',46,6],['barrels',-66,10],['crateS',8,-36]]},
+ barricade:{h:[['sandbags',-96,0],['sandbags',96,0],['crateS',-176,6]],v:[['sandbags',0,-62],['sandbags',0,62]]},
+ grove:{h:[['rockL',0,0],['bush',-76,12],['bushW',70,16],['bushB',-10,-58]]},
+ boulders:{h:[['rockC',0,0],['rockS',70,10],['rockS',-66,6],['bushB',4,-40]]},
+ graveyard:{h:[['cross',-124,0],['cross',0,-10],['cross',124,0]]},
+ spikes:{h:[['spikes',-96,0],['spikes',96,0]],v:[['spikes',0,-69],['spikes',0,69]]},
+ camp:{h:[['tent',0,0],['crateL',98,22],['barrels',-108,26]]},
+ well:{h:[['well',0,0],['bush',-84,12],['bushB',74,16]]},
+ dragon:{h:[['dragon',0,0]]},
+ flag1:{h:[['banner1',0,0]]},flag2:{h:[['banner2',0,0]]}};
+function buildProps(rr){
+ const walls=WALLS.map(w=>w.slice(0,4)),pts=PKP.concat(CHP),placed=[],Q=[[0,0],[1,0],[0,1],[1,1]];let cid=0;
+ const box=(n,x,y)=>{const r=propRect(n,x,y,PW[n]);return[r[0],r[1],r[0]+r[2],r[1]+r[3]]};
+ const hit=(a,b,p)=>a[0]-p<b[2]&&a[2]+p>b[0]&&a[1]-p<b[3]&&a[3]+p>b[1];
+ // try to place a whole cluster (all 4 mirrored copies must fit); wc = clearance to walls, pc = clearance to other clusters
+ const tryC=(tpl,cx,cy,flip,wc,pc,plaza)=>{const set=[];
+  for(const[qx,qy]of Q){const id=++cid;for(const[n,dx,dy]of tpl){const x0=cx+(flip?-dx:dx),x=qx?4800-x0:x0,y=qy?3200-(cy+dy):cy+dy;set.push({n,s:1,x,y,f:(flip?1:0)^qx,id,b:box(n,x,y)})}}
+  for(const p of set){const b=p.b;if(b[0]<110||b[1]<110||b[2]>MW-110||b[3]>MH-110)return 0;
+   if(walls.some(w=>hit(b,[w[0],w[1],w[0]+w[2],w[1]+w[3]],wc)))return 0;
+   if(pts.some(q=>q[0]>b[0]-80&&q[0]<b[2]+80&&q[1]>b[1]-80&&q[1]<b[3]+80))return 0;
+   if(!plaza&&Math.hypot((b[0]+b[2])/2-MW/2,(b[1]+b[3])/2-MH/2)<400)return 0;
+   if(placed.some(o=>hit(b,o.b,pc)))return 0;
+   if(set.some(o=>o.id!=p.id&&hit(b,o.b,pc)))return 0}
+  for(const p of set){placed.push(p);PROPS.push({x:p.x,y:p.y,n:p.n,s:1,f:!!p.f})}return 1};
+ const SP=[];for(let dx=-250;dx<=250;dx+=50)for(let dy=-250;dy<=250;dy+=50)SP.push([dx,dy]);SP.sort((a,b)=>Math.hypot(a[0],a[1])-Math.hypot(b[0],b[1])||a[0]-b[0]); // nearest-first search around the ideal spot
+ const run=(kind,cx,cy,i)=>{const T=PT[kind],tpl=T.v&&(i&1)?T.v:T.h;
+  for(const[ox,oy]of SP)for(const fl of[0,1])if(tryC(tpl,cx+ox,cy+oy,fl,62,56,0))return 1;return 0};
+ // 1) plaza landmarks: four dragon statues guarding the centre
+ for(const[ox,oy]of SP){if(tryC(PT.dragon.h,MW/2-440+ox,MH/2-340+oy,0,62,56,1))break}
+ // 2) outer ring: one camp and one graveyard in every quadrant, then the zone landmark (well)
+ const quota={camp:2,well:2,spikes:2,graveyard:2};
+ const kindAt=(x,y,i)=>{const c=Math.hypot(x-MW/2,y-MH/2),e=Math.min(x,y);
+  if(c<560)return null;
+  if(e<430)return['camp','grove','graveyard','supply'][i%4];
+  if(c<1150)return['barricade','supply','boulders','barricade','grove'][i%5];
+  return['grove','supply','well','boulders','spikes','barricade'][i%6]};
+ let i=0;for(let gy=0;gy<4;gy++)for(let gx=0;gx<6;gx++,i++){const cx=200+gx*400+((gy&1)?0:0),cy=200+gy*400;let k=kindAt(cx,cy,i+gy);if(!k)continue;
+  if(quota[k]!==undefined){if(quota[k]<=0)k='grove';else quota[k]--}
+  if(!run(k,cx,cy,i)&&k!='grove'&&!run('supply',cx,cy,i))run('grove',cx,cy,i)}
+ // 3) flag banners beside the end of every long wall (marks the wall ends, never blocks a lane)
+ const q0=walls.filter(w=>w[0]+w[2]/2<MW/2&&w[1]+w[3]/2<MH/2&&Math.max(w[2],w[3])>=180);
+ q0.forEach((w,j)=>{const hor=w[2]>=w[3];
+  if(hor){tryC(PT.flag2.h,w[0]-34,w[1]+w[3],j&1,6,50,0);tryC(PT.flag2.h,w[0]+w[2]+34,w[1]+w[3],(j&1)^1,6,50,0)}
+  else{tryC(PT.flag1.h,w[0]+w[2]/2,w[1]-20,j&1,6,50,0);tryC(PT.flag1.h,w[0]+w[2]/2,w[1]+w[3]+52,(j&1)^1,6,50,0)}})}
 function setLevel(n,ux){LV=n;UX=ux===undefined?((window.GFXQ==null?2:window.GFXQ)>=3?1:0):(ux?1:0);SEED=n==1?1337:9001;for(const a of[WALLS,PKP,CHP,PKTY,DEC,PAT,CSP,ZN,PROPS])a.length=0;
  const BS=n==2?BASE2:BASE1,PB=n==2?PKB2:PKB1,CB=n==2?CHB2:CHB1;
  for(const qx of[0,1])for(const qy of[0,1])for(const[x,y,w,h]of BS)WALLS.push([qx?4800-x-w:x,qy?3200-y-h:y,w,h]);
@@ -128,25 +178,11 @@ function setLevel(n,ux){LV=n;UX=ux===undefined?((window.GFXQ==null?2:window.GFXQ
  for(let i=0;i<50;i++){const x=100+rng()*(MW-200),y=100+rng()*(MH-200);if(!inWall(x,y))CSP.push([x|0,y|0,i%9==0?10:1+(rng()*2|0)])}
  /* ---- map props (Ultra HD only): new art objects, placed deterministically from their own PRNG so every client agrees ---- */
  {let sd=n*7919+13;const rr=()=>{sd=sd+0x6D2B79F5|0;let t=Math.imul(sd^sd>>>15,1|sd);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296};
-  const near=(x,y,p)=>WALLS.some(([a,b,w,h])=>x>a-p&&x<a+w+p&&y>b-p&&y<b+h+p);
-  const nearPk=(x,y,p)=>PKP.some(q=>Math.hypot(q[0]-x,q[1]-y)<p)||CHP.some(q=>Math.hypot(q[0]-x,q[1]-y)<p);
-  const put=(nm,x,y,s,pad)=>{if(x<110||y<110||x>MW-110||y>MH-110)return 0;if(near(x,y,pad)||nearPk(x,y,pad+30))return 0;PROPS.push({x,y,n:nm,s,f:rr()<.5});return 1};
-  const scat=(nms,cnt,pad,smin,smax)=>{for(let i=0,ok=0;i<cnt*8&&ok<cnt;i++)ok+=put(nms[rr()*nms.length|0],110+rr()*(MW-220),110+rr()*(MH-220),smin+rr()*(smax-smin),pad)};
-  scat(['bush','bushW','bushB'],70,60,.85,1.25);
-  scat(['rockL','rockS','rockS','rockC'],64,55,.8,1.3);
-  scat(['sandbags'],12,70,.9,1.1);scat(['spikes'],12,70,.9,1.1);scat(['cross'],14,50,.9,1.2);
-  scat(['tent'],6,100,.95,1.1);scat(['well'],4,90,1,1.1);scat(['dragon'],4,110,1,1.15);
-  for(let i=0;i<26;i++){const x=150+rr()*(MW-300),y=150+rr()*(MH-300); // crate + barrel stacks
-   if(put('crateL',x,y,.95+rr()*.2,60)){put('crateS',x+44,y+8,1,0);if(rr()<.7)put('barrels',x-64,y+14,.85+rr()*.2,0);if(rr()<.4)put('crateS',x+8,y-30,.9,0)}}
-  for(let i=0;i<60;i++){const w=WALLS[rr()*WALLS.length|0],hor=w[2]>=w[3],t=rr(),side=rr()<.5?-1:1; // banners hugging the walls
-   const x=hor?w[0]+16+t*(w[2]-32):(side<0?w[0]-30:w[0]+w[2]+30),y=hor?(side<0?w[1]-26:w[1]+w[3]+40):w[1]+16+t*(w[3]-32);
-   put(rr()<.55?'banner1':rr()<.5?'banner2':'banner3',x,y,.9+rr()*.2,0)}
-  if(UX){ // the whole sprite is solid now, so drop any prop that would cover a pickup pad, crate or the central crate
-   const keep=PROPS.filter(d=>{const r=propRect(d.n,d.x,d.y,PW[d.n]*d.s);return!PKP.concat(CHP).some(([px,py])=>px>r[0]-46&&px<r[0]+r[2]+46&&py>r[1]-46&&py<r[1]+r[3]+46)});PROPS.length=0;PROPS.push(...keep)}
+  if(UX)buildProps(rr);
   PROPS.sort((a,b)=>a.y-b.y);
   if(UX){ // make every prop and every wall pillar solid (players, bots and bullets all collide through WALLS)
-   const base=WALLS.length;for(let i=0;i<base;i++)for(const p of wallPillars(WALLS[i]))WALLS.push(propRect(p[1],p[2],p[3],p[4]));
-   for(const d of PROPS)WALLS.push(propRect(d.n,d.x,d.y,PW[d.n]*d.s));
+   // wall pillars are decoration on top of the wall rects (already solid); making their overhang solid would close the doorways of the central keep
+   for(const d of PROPS)WALLS.push(...propRects(d.n,d.x,d.y,PW[d.n]*d.s));
    for(let i=CSP.length-1;i>=0;i--){const c=CSP[i];if(WALLS.some(([a,b,w,h,pr])=>pr&&c[0]>a-6&&c[0]<a+w+6&&c[1]>b-6&&c[1]<b+h+6))CSP.splice(i,1)}}}}
 setLevel(1);
 
