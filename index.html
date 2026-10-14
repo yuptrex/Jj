@@ -12,7 +12,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 
 <!-- Game core styles (unmodified logic/layout rules extracted from the original single file) -->
-<link rel="stylesheet" href="game-core.css?v=50">
+<link rel="stylesheet" href="game-core.css?v=53">
 <link rel="stylesheet" href="home-base.css">
 
 <!-- Phase 1 visual re-skin (new; loads last so it wins on cascade without touching markup/ids) -->
@@ -35,7 +35,7 @@
     <div class="sp-tip" id="sp-tip"></div>
   </div>
 </div>
-<script>CSKLoadArt.set(document.getElementById('sp-bg'),CSKLoadArt.first)</script><script src="blink.js?v=50"></script>
+<script>CSKLoadArt.set(document.getElementById('sp-bg'),CSKLoadArt.first)</script><script src="blink.js?v=53"></script>
 <!-- Same loading screen, reused for every screen switch (home -> waiting room -> match, leaving, kicked, solo). Picks a new random scene each time. -->
 <div id="csk-load" hidden aria-hidden="true">
   <div class="sp-stage">
@@ -190,10 +190,10 @@
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script>window.__cskProg&&__cskProg(78)</script>
 <!-- Game logic (unmodified, concatenated from the original inline scripts in original order) -->
-<script src="home-fx.js"></script><script src="home-anim.js?v=50"></script><script src="clouds.js?v=50"></script>
+<script src="home-fx.js"></script><script src="home-anim.js?v=53"></script><script src="clouds.js?v=53"></script>
 <script src="fullscreen.js"></script>
-<script src="battle-fx.js?v=50"></script>
-<link rel="stylesheet" href="victory.css"><script src="victory.js"></script><script src="game.js?v=50"></script><script src="aq.js?v=50"></script>
+<script src="battle-fx.js?v=53"></script>
+<link rel="stylesheet" href="victory.css"><script src="victory.js"></script><script src="game.js?v=53"></script><script src="aq.js?v=53"></script>
 <script>/* wss:// address of your relay server (see RELAY-DEPLOY.md). Leave empty to use P2P + Firebase only. Can also be set per visit with ?relay=wss://... */
 window.CSK_RELAY_URL="";</script>
 <script src="rtc.js"></script>
@@ -202,6 +202,6 @@ window.CSK_RELAY_URL="";</script>
 <script src="lobby-fx.js"></script>
 <script src="lobby.js"></script>
 <script src="login.js"></script>
-<script src="home-new.js"></script><script src="fx.js?v=50"></script><script>(function(){var b=document.getElementById("st-so"),a=document.getElementById("acc");function f(){b.hidden=!a||a.dataset.s==="guest"}f();new MutationObserver(f).observe(a,{attributes:true,attributeFilter:["data-s"]});b.onclick=function(){document.getElementById("stx").click();var x=document.getElementById("acbtn");if(x)x.click()}})()</script><script>(function(){var st=document.getElementById("st"),sx=st.querySelector(".sx");st.addEventListener("click",function(e){var b=e.target.closest("[data-t]");if(!b)return;sx.dataset.p=b.dataset.t;document.getElementById("sx-g").hidden=b.dataset.t!=="g";document.getElementById("sx-k").hidden=b.dataset.t!=="k"})})()</script>
+<script src="home-new.js"></script><script src="fx.js?v=53"></script><script>(function(){var b=document.getElementById("st-so"),a=document.getElementById("acc");function f(){b.hidden=!a||a.dataset.s==="guest"}f();new MutationObserver(f).observe(a,{attributes:true,attributeFilter:["data-s"]});b.onclick=function(){document.getElementById("stx").click();var x=document.getElementById("acbtn");if(x)x.click()}})()</script><script>(function(){var st=document.getElementById("st"),sx=st.querySelector(".sx");st.addEventListener("click",function(e){var b=e.target.closest("[data-t]");if(!b)return;sx.dataset.p=b.dataset.t;document.getElementById("sx-g").hidden=b.dataset.t!=="g";document.getElementById("sx-k").hidden=b.dataset.t!=="k"})})()</script>
 <script>window.__cskProg&&__cskProg(97)</script>
 </body></html>

@@ -127,9 +127,9 @@ const pulse=(now,sp,ph)=>Math.sin(now/sp+(ph||0))*.5+.5;
 const LOWDEV=(()=>{try{return(navigator.hardwareConcurrency||8)<=4||(navigator.deviceMemory||8)<=4||/Android|iPhone|iPad|Mobile/i.test(navigator.userAgent||'')}catch(e){return false}})();
 window.CSK_LOWDEV=LOWDEV;
 const WEAK=(()=>{try{return(navigator.deviceMemory&&navigator.deviceMemory<=3)||(navigator.hardwareConcurrency&&navigator.hardwareConcurrency<=4)}catch(e){return false}})();window.CSK_WEAK=!!WEAK;
-const TL={T:512,M:6,k:0,k0:0,key:'',map:new Map(),pool:[],tick:0,max:20,mb:LOWDEV?40e6:90e6};
-function tileK(){const want=Math.max(.35,S*dpr),cap=LOWDEV?1:1.5;
- if(!TL.k0||want<TL.k0*.8||(want>TL.k0*1.25&&TL.k0<cap))TL.k0=Math.min(cap,Math.max(.35,Math.round(want*8)/8));
+const TL={T:512,M:6,k:0,k0:0,key:'',map:new Map(),pool:[],tick:0,max:20,mb:LOWDEV?110e6:160e6};
+function tileK(){const want=Math.max(.35,S*dpr*1.08),cap=3; // 1.08 = headroom for the camera punch-zoom, so tiles are never upscaled (stays sharp)
+ if(!TL.k0||want>TL.k0||want<TL.k0*.6)TL.k0=Math.min(cap,Math.ceil(want*8)/8);
  return TL.k0}
 function getTile(tx,ty){
  const id=ty*1000+tx;let t=TL.map.get(id);if(t){t.u=TL.tick;return t}
@@ -502,12 +502,12 @@ function post(now,dt,m,hw,hh){
  if(dt>0){emaDt+=(Math.min(dt,.1)-emaDt)*.05;if(emaDt>1/50&&!window.BFX_NOLITE){slowT+=dt;if(slowT>1.5)LITE=1}else slowT=Math.max(0,slowT-dt)}
  try{if(window.PFQ)PFQ.lq=LITE?1:0}catch(e){}
  try{flashesDraw(dt);if(!LITE&&gfx()>0&&!ULTRA())ambient(now,dt,hw,hh)}catch(e){}
- const W=cv.width,H=cv.height,P=pal(),key=W+'x'+H+'|'+LV;
- if(vigKey!==key){
-  const w=Math.max(8,W>>2),h=Math.max(8,H>>2);vigC=mk(w,h);const g=vigC.getContext('2d'),rg=g.createRadialGradient(w/2,h/2,Math.min(w,h)*.30,w/2,h/2,Math.hypot(w,h)*.55);
-  const c=P.vig;rg.addColorStop(0,`rgba(${c},0)`);rg.addColorStop(.6,`rgba(${c},.20)`);rg.addColorStop(1,`rgba(${c},.78)`);g.fillStyle=rg;g.fillRect(0,0,w,h);vigKey=key}
+ const W=cv.width,H=cv.height,P=pal(),key=innerWidth+'x'+innerHeight+'|'+LV;
+ if(vigKey!==key){ // screen vignette is a GPU-composited CSS layer (zero canvas cost per frame)
+  let el=document.getElementById('csk-vig');if(!el){el=document.createElement('div');el.id='csk-vig';el.style.cssText='position:fixed;inset:0;pointer-events:none;z-index:1';cv.insertAdjacentElement('afterend',el)}
+  const w=innerWidth,h=innerHeight,r0=Math.min(w,h)*.30,r1=Math.hypot(w,h)*.55,c=P.vig.join(',');
+  el.style.background=`radial-gradient(circle ${r1.toFixed(0)}px at 50% 50%,rgba(${c},0) ${r0.toFixed(0)}px,rgba(${c},.2) ${(r0+.6*(r1-r0)).toFixed(0)}px,rgba(${c},.78) ${r1.toFixed(0)}px)`;vigKey=key}
  cx.save();cx.setTransform(1,0,0,1,0,0);
- cx.globalAlpha=1;cx.drawImage(vigC,0,0,W,H);
  if(m&&m.al&&m.hp<40){const k=(40-m.hp)/40,pl=.5+.5*Math.sin(now/(150+m.hp*6));const g=cx.createRadialGradient(W/2,H/2,Math.min(W,H)*.32,W/2,H/2,Math.hypot(W,H)*.6);g.addColorStop(0,'rgba(255,30,20,0)');g.addColorStop(1,`rgba(255,30,20,${(.20+.34*pl)*k})`);cx.fillStyle=g;cx.fillRect(0,0,W,H)}
  if(hurtT>0){hurtT=Math.max(0,hurtT-dt*2.4);const g=cx.createRadialGradient(W/2,H/2,Math.min(W,H)*.38,W/2,H/2,Math.hypot(W,H)*.6);g.addColorStop(0,'rgba(255,40,30,0)');g.addColorStop(1,`rgba(255,40,30,${.22*hurtT})`);cx.fillStyle=g;cx.fillRect(0,0,W,H)}
  cx.restore()}
@@ -576,5 +576,5 @@ function ev(e){
  }}
 
 window.BFX={tiles:TL,floor,walls,pads,coin,bullet,under,tag,parts:partsDraw,rings:ringsDraw,texts:textsDraw,post,zoom,ev,
- reset(){LITE=window.CSK_WEAK?1:0;slowT=0;flashes.length=0;decals.length=0;amb.length=0;punchZ=0;hurtT=0}};
+ reset(){LITE=0;slowT=0;flashes.length=0;decals.length=0;amb.length=0;punchZ=0;hurtT=0}};
 })();

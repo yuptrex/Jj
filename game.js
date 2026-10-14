@@ -349,7 +349,7 @@ let snap={p:[],b:[],k:[],w:null},snapAt=0,netEv=[],views={},parts=[],rings=[],te
 const cam={x:MW/2,y:MH/2},keys={},M={x:0,y:0,down:false},ST={mv:null,aim:null,fire:null,dash:0,rel:0};
 let paused=false,lockId='',selLv=1,beams=[],conf=[],hpS=100,healAt=-1e9,liveAt=-1e9,deadSince=0,wasAlive=null,winT=0,confDone=0,specId=null,vsLoadShown=0;
 let rScale=1;
-function rs(){dpr=Math.max(.5,Math.min(devicePixelRatio||1,window.CSK_WEAK?1.25:window.CSK_LOWDEV?1.5:1.75)*rScale);cv.width=Math.max(1,Math.round(innerWidth*dpr));cv.height=Math.max(1,Math.round(innerHeight*dpr));cv.style.width=innerWidth+'px';cv.style.height=innerHeight+'px';S=Math.min(innerWidth/1000,innerHeight/620);UIS=Math.max(.64,Math.min(1,Math.min(innerWidth/980,innerHeight/560)));try{document.documentElement.style.setProperty("--uis",UIS.toFixed(3));if(typeof uisApply=="function")uisApply()}catch(e){}}
+function rs(){dpr=Math.max(.5,Math.min(devicePixelRatio||1,1.75)*rScale);cv.width=Math.max(1,Math.round(innerWidth*dpr));cv.height=Math.max(1,Math.round(innerHeight*dpr));cv.style.width=innerWidth+'px';cv.style.height=innerHeight+'px';S=Math.min(innerWidth/1000,innerHeight/620);UIS=Math.max(.64,Math.min(1,Math.min(innerWidth/980,innerHeight/560)));try{document.documentElement.style.setProperty("--uis",UIS.toFixed(3));if(typeof uisApply=="function")uisApply()}catch(e){}}
 addEventListener('resize',rs);rs();
 
 /* ===== SOUND ENGINE: decoded sample bank, per-sound mix, distance + stereo placement ===== */
@@ -931,7 +931,7 @@ function render(dt,now){if(snap.lv&&(snap.lv!=LV||(!sim&&snap.ux!==undefined&&(s
  if(ft){const lq=1-Math.pow(1-lp,f60);cam.x+=(ft.x-cam.x)*lq;cam.y+=(ft.y-cam.y)*lq}
  const hw=innerWidth/2/S,hh=innerHeight/2/S;cam.x=cl(cam.x,Math.min(hw,MW/2),Math.max(MW-hw,MW/2));cam.y=cl(cam.y,Math.min(hh,MH/2),Math.max(MH-hh,MH/2));
  shake*=Math.pow(.85,f60);if(shake<.4)shake=0;flash=Math.max(0,flash-dt);hitm=Math.max(0,hitm-dt);
- cx.setTransform(1,0,0,1,0,0);cx.fillStyle='#070a0d';cx.fillRect(0,0,cv.width,cv.height);
+ cx.setTransform(1,0,0,1,0,0);if(!(window.BFX&&!window.__bfE&&hw*2<MW-40&&hh*2<MH-40)){cx.fillStyle='#070a0d';cx.fillRect(0,0,cv.width,cv.height)}  /* tiles cover the whole view: no full-screen clear needed */
  const sx=(Math.random()-.5)*shake*(window.AR_SHK===undefined?1:window.AR_SHK),sy=(Math.random()-.5)*shake*(window.AR_SHK===undefined?1:window.AR_SHK);
  const SZ=S*(1+(window.BFX?BFX.zoom(dt):0));cx.setTransform(dpr*SZ,0,0,dpr*SZ,dpr*(innerWidth/2-cam.x*SZ+sx),dpr*(innerHeight/2-cam.y*SZ+sy));
  let bf=0;try{bf=window.BFX?BFX.floor(now,dt,hw,hh):0}catch(x){bf=0;if(!window.__bfE){window.__bfE=1;console.error('BFX floor',x)}}
@@ -981,8 +981,15 @@ function render(dt,now){if(snap.lv&&(snap.lv!=LV||(!sim&&snap.ux!==undefined&&(s
  if(bf)BFX.parts(parts,dt);else{for(const q of parts){q.l-=dt;q.x+=q.vx*dt;q.y+=q.vy*dt;q.vx*=.93;q.vy*=.93;cx.globalAlpha=Math.max(0,q.l/q.m);cx.fillStyle=q.c;cx.fillRect(q.x-q.s/2,q.y-q.s/2,q.s,q.s)}}cx.globalAlpha=1;parts=parts.filter(q=>q.l>0);
 if(bf)BFX.texts(texts,dt);else{for(const q of texts){q.l-=dt;q.y-=38*dt;cx.globalAlpha=Math.min(1,q.l*2.5);cx.fillStyle=q.c;cx.strokeStyle='#000b';cx.lineWidth=3;cx.font='bold 17px "Trebuchet MS",sans-serif';cx.textAlign='center';cx.strokeText(q.t,q.x,q.y);cx.fillText(q.t,q.x,q.y)}}texts=texts.filter(q=>q.l>0);cx.globalAlpha=1;
  if(bf)try{BFX.post(now,dt,m,hw,hh)}catch(x){if(!window.__bfE3){window.__bfE3=1;console.error('BFX post',x)}}
+ try{frameDraw()}catch(x){}
  try{flyDraw(dt)}catch(x){}try{swapUI(m,mv)}catch(x){}try{crUI(m,mv)}catch(x){}
  hud(m,now,dt)}
+/* ornate screen frame: fixed to the screen edges on every device, stretched to the exact viewport, drawn under the HUD */
+const FRM=new Image();FRM.src='arena-frame.webp?v=53';
+let FRC=null;
+function frameDraw(){if(!FRM.naturalWidth)return;const W=cv.width,H=cv.height;
+ if(!FRC||FRC.width!==W||FRC.height!==H){FRC=document.createElement('canvas');FRC.width=W;FRC.height=H;const g=FRC.getContext('2d');g.imageSmoothingEnabled=true;g.imageSmoothingQuality='high';g.drawImage(FRM,0,0,W,H)} /* scaled once per screen size, then a 1:1 copy each frame */
+ cx.setTransform(1,0,0,1,0,0);cx.globalAlpha=1;cx.globalCompositeOperation='source-over';cx.drawImage(FRC,0,0)}
 
 /* ============ GUN PADS: swap prompt, pick animation ============ */
 const GN={smg:1,shotgun:1,rifle:1},SWMX=(()=>{const m={dps:0,rng:0,mag:0};for(const w in WP){const a=WP[w];m.dps=Math.max(m.dps,a.dmg*a.pel/a.rate);m.rng=Math.max(m.rng,a.spd*a.life);m.mag=Math.max(m.mag,a.mag)}return m})();

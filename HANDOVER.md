@@ -521,3 +521,12 @@ The arena (floor, walls, pickups, bullets, particles, lighting) was dull; it is 
 - Off-screen coins, pickups, crates and players are skipped. Background menu animation loops stop during a match.
 - Low-end devices (<=4 cores / <=3GB, or mobile) get capped resolution, lower adaptive floor (60%) and automatic LITE effects.
 - Classic (non-Ultra) mode: grass/water decor is now baked in a still pose.
+
+## v51 — sharpness restored
+Resolution is never lowered (adaptive scaler locked to 100%, full device pixel ratio up to 1.75 on every device) and arena tiles are baked at the exact screen scale. Speed comes from the collision grid, baked arena, culling and loop fixes only.
+
+## v52
+Screen vignette moved from a per-frame full-screen canvas blend to a CSS overlay (#csk-vig); the full-canvas clear is skipped when the arena tiles cover the view.
+
+## v53
+Ornate screen frame (arena-frame.webp) drawn over the arena, under the HUD, stretched to the exact viewport on every device (cached at screen size, one 1:1 copy per frame).
