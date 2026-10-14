@@ -105,11 +105,27 @@ function setLevel(n){LV=n;SEED=n==1?1337:9001;for(const a of[WALLS,PKP,CHP,PKTY,
  CHP.push([2400,1600]);
  for(const qx of[0,1])for(const qy of[0,1]){for(const[x,y]of PB)PKP.push([qx?4800-x:x,qy?3200-y:y]);for(const[x,y]of CB)CHP.push([qx?4800-x:x,qy?3200-y:y])}
  ZN.push(...(n==2?[['OUTER RING',1200,800],['SALT FLATS',3600,800],['BONE YARD',1200,2400],['IRON GATE',3600,2400],['THE KEEP',2400,1250]]:[['DUST BOWL',1200,800],['GREEN ROW',3600,800],['STEEL YARD',1200,2400],['THE PIT',3600,2400],['PLAZA',2400,1100]]));
- for(let i=0;i<650;i++){const x=rng()*MW,y=rng()*MH,k=rng()*7|0,r=rng()*6.28,sc=.7+rng()*.8;if(!inWall(x,y))DEC.push({x,y,k,r,s:sc})}
+ for(let i=0;i<650;i++){const x=rng()*MW,y=rng()*MH,k=rng()*7|0,r=rng()*6.28,sc=.7+rng()*.8;void k,r,sc}
  for(let i=0;i<70;i++)PAT.push({x:rng()*MW,y:rng()*MH,r:220+rng()*380,k:rng()*3|0});
  PKP.forEach((_,i)=>PKTY.push(['hp','smg','shield','shotgun','speed','rifle','hp','shield','smg'][i%9]));
  for(let i=0;i<30;i++){const ax=150+rng()*(MW-300),ay=150+rng()*(MH-300);for(let j=0;j<6;j++){const x=ax+(rng()-.5)*120,y=ay+(rng()-.5)*120;if(!inWall(x,y))CSP.push([x|0,y|0,1+(rng()*2|0)])}}
- for(let i=0;i<50;i++){const x=100+rng()*(MW-200),y=100+rng()*(MH-200);if(!inWall(x,y))CSP.push([x|0,y|0,i%9==0?10:1+(rng()*2|0)])}}
+ for(let i=0;i<50;i++){const x=100+rng()*(MW-200),y=100+rng()*(MH-200);if(!inWall(x,y))CSP.push([x|0,y|0,i%9==0?10:1+(rng()*2|0)])}
+ /* ---- map props (v44): new art objects, placed deterministically from their own PRNG so every client agrees ---- */
+ {let sd=n*7919+13;const rr=()=>{sd=sd+0x6D2B79F5|0;let t=Math.imul(sd^sd>>>15,1|sd);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296};
+  const near=(x,y,p)=>WALLS.some(([a,b,w,h])=>x>a-p&&x<a+w+p&&y>b-p&&y<b+h+p);
+  const nearPk=(x,y,p)=>PKP.some(q=>Math.hypot(q[0]-x,q[1]-y)<p)||CHP.some(q=>Math.hypot(q[0]-x,q[1]-y)<p);
+  const put=(nm,x,y,s,pad)=>{if(x<110||y<110||x>MW-110||y>MH-110)return 0;if(near(x,y,pad)||nearPk(x,y,pad+30))return 0;DEC.push({x,y,n:nm,s,f:rr()<.5});return 1};
+  const scat=(nms,cnt,pad,smin,smax)=>{for(let i=0,ok=0;i<cnt*8&&ok<cnt;i++)ok+=put(nms[rr()*nms.length|0],110+rr()*(MW-220),110+rr()*(MH-220),smin+rr()*(smax-smin),pad)};
+  scat(['bush','bushW','bushB'],70,60,.85,1.25);
+  scat(['rockL','rockS','rockS','rockC'],64,55,.8,1.3);
+  scat(['sandbags'],12,70,.9,1.1);scat(['spikes'],12,70,.9,1.1);scat(['cross'],14,50,.9,1.2);
+  scat(['tent'],6,100,.95,1.1);scat(['well'],4,90,1,1.1);scat(['dragon'],4,110,1,1.15);
+  for(let i=0;i<26;i++){const x=150+rr()*(MW-300),y=150+rr()*(MH-300); // crate + barrel stacks
+   if(put('crateL',x,y,.95+rr()*.2,60)){put('crateS',x+44,y+8,1,0);if(rr()<.7)put('barrels',x-64,y+14,.85+rr()*.2,0);if(rr()<.4)put('crateS',x+8,y-30,.9,0)}}
+  for(let i=0;i<60;i++){const w=WALLS[rr()*WALLS.length|0],hor=w[2]>=w[3],t=rr(),side=rr()<.5?-1:1; // banners hugging the walls
+   const x=hor?w[0]+16+t*(w[2]-32):(side<0?w[0]-30:w[0]+w[2]+30),y=hor?(side<0?w[1]-26:w[1]+w[3]+40):w[1]+16+t*(w[3]-32);
+   put(rr()<.55?'banner1':rr()<.5?'banner2':'banner3',x,y,.9+rr()*.2,0)}
+  DEC.sort((a,b)=>a.y-b.y)}}
 setLevel(1);
 
 /* ============ SIMULATION (runs only on the host / solo player) ============ */
@@ -814,25 +830,14 @@ fastTap($('pz'),()=>{sfx('ui',{j:0});setPause(true)});fastTap($('pzr'),()=>{sfx(
 fastTap($('pzh'),()=>{try{net&&net.send({t:'bye',id:myId})}catch(e){}setTimeout(()=>location.reload(),60)});
 addEventListener('resize',pzPos);document.addEventListener('visibilitychange',()=>{if(document.hidden&&sim&&!net)setPause(true)});
 let last=0,acc=0,sT=0,iT=0,AGE=0,F60=1,snapOk=0;
-/* ---- adaptive effects governor ----
-   Resolution/DPR is intentionally LOCKED (that's what caused the old blurry-text-on-mobile-Chrome bug) and is
-   never touched here. What IS adaptive: window.GFXQ (shadow blur / glow / ambient fx tier, 0..2) gets stepped
-   DOWN automatically under sustained low frame rate, and back UP once things recover. The player's own Settings
-   choice (o.gfx, in the IIFE near the bottom of this file) is the ceiling this never exceeds -- if someone picks
-   "Low" by hand we never raise it. This only ever lowers effort, never resolution, so there's no blur regression. */
+/* ---- quality lock (replaces the old adaptive "90 fps governor") ----
+   The old governor lowered render resolution (100% -> 50%) and switched off glows/shadows whenever frames ran
+   slow. That is what made text turn blurry on mobile Chrome. Quality is now LOCKED: resolution scale is always
+   1.0 (full device pixel ratio, capped at 2) and glows/shadows are always on. perfGov() is kept as a stub so
+   existing calls and the FPS read-out still work, but it never changes quality. */
 const PERF={tiers:[1],ti:0,buf:[],last:0,hold:0,bad:0,good:0,noUp:0,upAt:0,disp:1e9};
-let gfxCeil=2,gfxAuto=2;
 function perfTier(){}
-function perfGov(now){
- if(!PERF.last){PERF.last=now;return}
- const fdt=now-PERF.last;PERF.last=now;if(fdt<=0||fdt>250)return;   // ignore tab-hidden / huge gaps
- const fps=1000/fdt;PERF.buf.push(fps);if(PERF.buf.length>45)PERF.buf.shift();
- if(PERF.buf.length<30)return;   // need ~0.5s of samples before deciding anything
- const avg=PERF.buf.reduce((a,b)=>a+b,0)/PERF.buf.length;
- if(avg<42){PERF.good=0;if(++PERF.bad>60&&gfxAuto>0){gfxAuto--;PERF.bad=0;PERF.buf.length=0;applyGfx()}}
- else if(avg>54){PERF.bad=0;if(++PERF.good>180&&gfxAuto<gfxCeil){gfxAuto++;PERF.good=0;PERF.buf.length=0;applyGfx()}}
- else{PERF.bad=0;PERF.good=0}}
-function applyGfx(){window.GFXQ=gfxAuto;PERF.ti=gfxAuto<gfxCeil?1:0}
+function perfGov(){}
 function frame(now){const dt=Math.min(.05,(now-last)/1000);try{window.AQ&&AQ((now-last)/1000,now)}catch(e){}last=now;try{perfGov(now)}catch(x){}try{musicTick(dt,now)}catch(x){}
   if(sim&&!net){if(paused){acc=0;AGE=0}else{acc+=dt;const m=sim.p[myId];let stp=0;while(acc>=TICK){if(m)m.in=readInput();sim.step(TICK);acc-=TICK;stp=1}
    if(stp||!snapOk){snap=sim.snap();snapAt=now;snapOk=1}   /* build a snapshot only when the 60 Hz sim actually advanced */
@@ -862,19 +867,7 @@ function render(dt,now){if(snap.lv&&snap.lv!=LV)setLevel(snap.lv);if(!sim&&net)n
  const sx=(Math.random()-.5)*shake*(window.AR_SHK===undefined?1:window.AR_SHK),sy=(Math.random()-.5)*shake*(window.AR_SHK===undefined?1:window.AR_SHK);
  const SZ=S*(1+(window.BFX?BFX.zoom(dt):0));cx.setTransform(dpr*SZ,0,0,dpr*SZ,dpr*(innerWidth/2-cam.x*SZ+sx),dpr*(innerHeight/2-cam.y*SZ+sy));
  let bf=0;try{bf=window.BFX?BFX.floor(now,dt,hw,hh):0}catch(x){bf=0;if(!window.__bfE){window.__bfE=1;console.error('BFX floor',x)}}
- if(!bf){const g=cx.createRadialGradient(MW/2,MH/2,300,MW/2,MH/2,3000);g.addColorStop(0,LV==2?'#241c22':'#17212b');g.addColorStop(1,LV==2?'#150f14':'#0f161d');cx.fillStyle=g;cx.fillRect(0,0,MW,MH);
- for(const q of PAT){if(Math.abs(q.x-cam.x)>hw+q.r||Math.abs(q.y-cam.y)>hh+q.r)continue;const gg=cx.createRadialGradient(q.x,q.y,0,q.x,q.y,q.r),c=['19,38,27','52,44,24','24,38,54'][q.k];gg.addColorStop(0,`rgba(${c},.8)`);gg.addColorStop(1,`rgba(${c},0)`);cx.fillStyle=gg;cx.fillRect(q.x-q.r,q.y-q.r,q.r*2,q.r*2)}
- for(const d of DEC){if(Math.abs(d.x-cam.x)>hw+40||Math.abs(d.y-cam.y)>hh+40)continue;cx.save();cx.translate(d.x,d.y);cx.rotate(d.r);cx.scale(d.s,d.s);
-  if(d.k==0){cx.strokeStyle='#2f5a3a';cx.lineWidth=2;cx.beginPath();for(let i=-1;i<2;i++){cx.moveTo(i*4,4);cx.quadraticCurveTo(i*6,-4,i*9,-10)}cx.stroke()}
-  else if(d.k==1){cx.fillStyle='#2b3743';cx.beginPath();cx.ellipse(0,0,11,8,0,0,6.28);cx.fill();cx.fillStyle='#3a4856';cx.beginPath();cx.ellipse(-2,-2,6,4,0,0,6.28);cx.fill()}
-  else if(d.k==2){cx.fillStyle='#1c3a52';cx.beginPath();cx.ellipse(0,0,26,14,0,0,6.28);cx.fill();cx.strokeStyle='#3a6a8a55';cx.lineWidth=2;cx.stroke()}
-  else if(d.k==3){cx.fillStyle='#1b3324';for(const[x,y,r]of[[0,0,12],[10,4,9],[-9,5,8]]){cx.beginPath();cx.arc(x,y,r,0,6.28);cx.fill()}cx.fillStyle='#24462f';cx.beginPath();cx.arc(-2,-3,6,0,6.28);cx.fill()}
-  else if(d.k==4){cx.strokeStyle='#ffb02e30';cx.lineWidth=5;cx.beginPath();cx.moveTo(-22,8);cx.lineTo(0,-8);cx.lineTo(22,8);cx.stroke()}
-  else if(d.k==5){cx.strokeStyle='#5a4a3a';cx.lineWidth=2;cx.beginPath();cx.moveTo(0,10);cx.lineTo(0,-28);cx.stroke();cx.fillStyle='#b23a3a88';cx.beginPath();cx.moveTo(0,-28);cx.lineTo(16,-24);cx.lineTo(0,-18);cx.closePath();cx.fill()}
-  else{cx.strokeStyle='#3a4856';cx.lineWidth=3;cx.beginPath();cx.arc(0,0,14,0,6.28);cx.stroke();cx.beginPath();cx.moveTo(-14,0);cx.lineTo(14,0);cx.moveTo(0,-14);cx.lineTo(0,14);cx.stroke()}
-  cx.restore()}
- cx.fillStyle='#ffffff0a';cx.font='bold 120px "Trebuchet MS",sans-serif';cx.textAlign='center';for(const z of ZN)cx.fillText(z[0],z[1],z[2]);
- cx.strokeStyle='#1d2935';cx.lineWidth=1;cx.beginPath();for(let x=0;x<=MW;x+=100){cx.moveTo(x,0);cx.lineTo(x,MH)}for(let y=0;y<=MH;y+=100){cx.moveTo(0,y);cx.lineTo(MW,y)}cx.stroke();
+ if(!bf){const g=cx.createRadialGradient(MW/2,MH/2,300,MW/2,MH/2,3000);g.addColorStop(0,'#1a2842');g.addColorStop(1,'#0c1424');cx.fillStyle=g;cx.fillRect(0,0,MW,MH);
  cx.strokeStyle='#ffb02e55';cx.lineWidth=6;cx.setLineDash([30,20]);cx.strokeRect(3,3,MW-6,MH-6);cx.setLineDash([]);}
  let wd=0;if(bf){try{BFX.walls(now,hw,hh);wd=1}catch(x){if(!window.__bfE2){window.__bfE2=1;console.error('BFX walls',x)}}}
  if(!wd){for(const[x,y,w,h]of WALLS){if(x>cam.x+hw+60||x+w<cam.x-hw-60||y>cam.y+hh+60||y+h<cam.y-hh-60)continue;
@@ -903,10 +896,10 @@ function render(dt,now){if(snap.lv&&snap.lv!=LV)setLevel(snap.lv);if(!sim&&net)n
   if(p.rel>0){cx.strokeStyle='#fff';cx.lineWidth=3;cx.beginPath();cx.arc(v.x,v.y,R+13,-1.57,-1.57+6.28*(1-p.rel/WP[p.w].rel));cx.stroke()}
   if(bf)BFX.tag(p,v,now,dt);else{cx.fillStyle='#000a';cx.fillRect(v.x-22,v.y-R-18,44,6);cx.fillStyle=v.hs>50?'#5fd37a':v.hs>25?'#ffcf4a':'#ff6a5f';cx.fillRect(v.x-22,v.y-R-18,44*Math.max(0,v.hs)/100,6);
   cx.fillStyle='#e8eef2';cx.font='12px "Trebuchet MS",sans-serif';cx.textAlign='center';cx.textBaseline='alphabetic';cx.fillText(p.name,v.x,v.y-R-24)}}
- if(bf)BFX.rings(rings,dt);else{for(const r of rings){r.l-=dt;r.r+=(r.g||160)*dt;cx.globalAlpha=Math.max(0,r.l/r.m);cx.strokeStyle=r.c;cx.lineWidth=3;cx.beginPath();cx.arc(r.x,r.y,Math.max(0,r.r),0,6.28);cx.stroke()}}rings=rings.filter(r=>r.l>0);if(rings.length>80)rings.splice(0,rings.length-80);
+ if(bf)BFX.rings(rings,dt);else{for(const r of rings){r.l-=dt;r.r+=(r.g||160)*dt;cx.globalAlpha=Math.max(0,r.l/r.m);cx.strokeStyle=r.c;cx.lineWidth=3;cx.beginPath();cx.arc(r.x,r.y,Math.max(0,r.r),0,6.28);cx.stroke()}}rings=rings.filter(r=>r.l>0);
  cx.save();cx.globalCompositeOperation='lighter';for(const b of beams){b.l-=dt;const k=Math.max(0,b.l/b.m),w=36*(k+.3),g=cx.createLinearGradient(0,b.y-320,0,b.y);g.addColorStop(0,`hsla(${b.h},95%,70%,0)`);g.addColorStop(1,`hsla(${b.h},95%,70%,${.6*k})`);cx.fillStyle=g;cx.fillRect(b.x-w/2,b.y-320,w,320)}cx.restore();beams=beams.filter(b=>b.l>0);
- if(bf)BFX.parts(parts,dt);else{for(const q of parts){q.l-=dt;q.x+=q.vx*dt;q.y+=q.vy*dt;q.vx*=.93;q.vy*=.93;cx.globalAlpha=Math.max(0,q.l/q.m);cx.fillStyle=q.c;cx.fillRect(q.x-q.s/2,q.y-q.s/2,q.s,q.s)}}cx.globalAlpha=1;parts=parts.filter(q=>q.l>0);if(parts.length>(gfxAuto<1?260:gfxAuto<2?420:650))parts.splice(0,parts.length-(gfxAuto<1?260:gfxAuto<2?420:650));
-if(bf)BFX.texts(texts,dt);else{for(const q of texts){q.l-=dt;q.y-=38*dt;cx.globalAlpha=Math.min(1,q.l*2.5);cx.fillStyle=q.c;cx.strokeStyle='#000b';cx.lineWidth=3;cx.font='bold 17px "Trebuchet MS",sans-serif';cx.textAlign='center';cx.strokeText(q.t,q.x,q.y);cx.fillText(q.t,q.x,q.y)}}texts=texts.filter(q=>q.l>0);if(texts.length>60)texts.splice(0,texts.length-60);cx.globalAlpha=1;
+ if(bf)BFX.parts(parts,dt);else{for(const q of parts){q.l-=dt;q.x+=q.vx*dt;q.y+=q.vy*dt;q.vx*=.93;q.vy*=.93;cx.globalAlpha=Math.max(0,q.l/q.m);cx.fillStyle=q.c;cx.fillRect(q.x-q.s/2,q.y-q.s/2,q.s,q.s)}}cx.globalAlpha=1;parts=parts.filter(q=>q.l>0);
+if(bf)BFX.texts(texts,dt);else{for(const q of texts){q.l-=dt;q.y-=38*dt;cx.globalAlpha=Math.min(1,q.l*2.5);cx.fillStyle=q.c;cx.strokeStyle='#000b';cx.lineWidth=3;cx.font='bold 17px "Trebuchet MS",sans-serif';cx.textAlign='center';cx.strokeText(q.t,q.x,q.y);cx.fillText(q.t,q.x,q.y)}}texts=texts.filter(q=>q.l>0);cx.globalAlpha=1;
  if(bf)try{BFX.post(now,dt,m,hw,hh)}catch(x){if(!window.__bfE3){window.__bfE3=1;console.error('BFX post',x)}}
  try{flyDraw(dt)}catch(x){}try{swapUI(m,mv)}catch(x){}try{crUI(m,mv)}catch(x){}
  hud(m,now,dt)}
@@ -1565,7 +1558,7 @@ apply();
 const tips=['Press B to drop a bomb, press B again to detonate it.','Dash with Shift to dodge incoming fire.','Spend coins on weapon upgrades with 1-4.','Hold Tab to see the full scoreboard.','Bombs go dead when they leave your screen, so keep them in view.'];let ti=Math.random()*tips.length|0;const tp=g('tip');
 function tip(){tp.style.opacity=0;setTimeout(()=>{tp.textContent='Tip: '+tips[ti++%tips.length];tp.style.opacity=1},300)}tip();setInterval(tip,6000);
 const fp=g('fps');let fr=0,ft=performance.now();
-(function loop(t){fr++;if(t-ft>=1000){fp.textContent=fr+' FPS'+(PERF.ti?' \u00b7 fx '+['low','med','high'][gfxAuto]:'');fr=0;ft=t}
+(function loop(t){fr++;if(t-ft>=1000){fp.textContent=fr+' FPS'+(PERF.ti?' \u00b7 res '+Math.round(rScale*100)+'%':'');fr=0;ft=t}
  requestAnimationFrame(loop)})(performance.now());
 })();
 /* in-game home scene: real in-game characters, names, terrain and pickups drawn on the game canvas */
@@ -1618,11 +1611,8 @@ function loop(t){if(M.style.display=='none')return;try{hm(t)}catch(e){if(!window
 })();
 /* settings: full-screen grid, switches, segmented controls, game-feel feedback */
 (function(){const g=id=>document.getElementById(id),L=(k,v)=>{try{if(v===undefined)return JSON.parse(localStorage.getItem(k));localStorage.setItem(k,JSON.stringify(v))}catch(e){return null}};
-const DEF_GFX=(()=>{   // first-run-only default: start lower on signals of a weak device, never overrides a saved choice
- try{const dm=navigator.deviceMemory,hc=navigator.hardwareConcurrency||4,mob=/Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
-  if((dm&&dm<=2)||hc<=2)return 0;if(mob||(dm&&dm<=4)||hc<=4)return 1;return 2}catch(e){return 2}})();
-const o=Object.assign({gfx:DEF_GFX,shk:2,fx:2,hf:true,kf:true,an:true,tp:true,dr:true},L('ar-set2')||{}),$$=q=>document.querySelectorAll(q);
-function ap(){gfxCeil=o.gfx;gfxAuto=gfxCeil;PERF.buf.length=0;PERF.bad=0;PERF.good=0;window.GFXQ=gfxAuto;window.AR_SHK=[0,.5,1][o.shk];window.AR_FX=[.35,.7,1][o.fx];window.AR_HF=o.hf;window.AR_DR=o.dr;g('kf').style.display=o.kf?'':'none';document.body.classList.toggle('noanim',!o.an);g('tip').style.visibility=o.tp?'':'hidden';
+const o=Object.assign({gfx:2,shk:2,fx:2,hf:true,kf:true,an:true,tp:true,dr:true},L('ar-set2')||{}),$$=q=>document.querySelectorAll(q);
+function ap(){window.GFXQ=o.gfx;window.AR_SHK=[0,.5,1][o.shk];window.AR_FX=[.35,.7,1][o.fx];window.AR_HF=o.hf;window.AR_DR=o.dr;g('kf').style.display=o.kf?'':'none';document.body.classList.toggle('noanim',!o.an);g('tip').style.visibility=o.tp?'':'hidden';
  $$('#st [data-o]').forEach(b=>b.setAttribute('aria-pressed',o[b.dataset.o]?'true':'false'));$$('#st [data-seg]').forEach(r=>[...r.children].forEach(b=>b.setAttribute('aria-pressed',+b.dataset.i==o[r.dataset.seg]?'true':'false')));
  g('o-mute').setAttribute('aria-pressed',mute?'false':'true');L('ar-set2',o)}
 $$('#st [data-o]').forEach(b=>b.onclick=()=>{o[b.dataset.o]=!o[b.dataset.o];ap()});

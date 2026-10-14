@@ -497,3 +497,10 @@ The arena (floor, walls, pickups, bullets, particles, lighting) was dull; it is 
   loot panel drawn in the same style as the live HUD (`edPill` / `edLoot` in `game.js`). FIRE / DASH / RELOAD / TURRET / BOMB already did.
 - OPEN / SWAP / LOOT LIST are hit-tested by their rectangle instead of a circle.
 - The editor toolbar is see-through and passes taps through its gaps so the loot panel behind it can be dragged.
+
+## v44 - new map art
+- Floor: `map-floor.jpg` (your tile texture, cropped to an exact grid period) tiled across the whole 4800x3200 arena, 96 world units per cell.
+- Props: `map-objs.webp` atlas cut from your sprite sheet (pillars, crates, barrels, sandbags, spikes, banners, tents, wells, dragon statues, bushes, rocks). Placement is in `setLevel()` in game.js (own PRNG, so all players see the same map).
+- Walls: same collision rects as before; drawn as dark stone slabs with pillar sprites. Tower blocks on short square walls.
+- Removed: old decor (grass/rock/pond/flag/crystal/sigil), colour patches, zone names, rune rings, centre emblem, cloud shadows, edge glow, wall braziers/flames, ambient fireflies/embers.
+- Props are visual only (no collision) so gameplay, bots and multiplayer sync are unchanged.
