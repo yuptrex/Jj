@@ -12,7 +12,7 @@ function R32(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15
 function mk(w,h){const c=document.createElement('canvas');c.width=w;c.height=h;return c}
 /* Graphics quality tier, chosen in Settings: 0 = Low, 1 = Medium, 2 = High (default, original look). */
 const gfx=()=>window.GFXQ==null?2:window.GFXQ;
-const ULTRA=()=>gfx()>=3;   // 3 = Ultra HD: new tiled floor + prop art (below)
+const ULTRA=()=>typeof UX!=='undefined'?UX==1:gfx()>=3;   // 3 = Ultra HD: new tiled floor + prop art (below)
 const GLOW=()=>gfx()>=1;   // skip the small decorative glow sprites (crystals/bush/pond/sigils) below Medium
 const CLOUDS=()=>gfx()>=2; // drifting cloud shadows are a High-only flourish
 const Q=()=>!!(window.PFQ&&window.PFQ.lq)||LITE||gfx()===0;   // low-quality flag used by the game's own perf code

@@ -88,7 +88,7 @@ const WALLS=[],PKP=[],CHP=[],PKTY=[],DEC=[],PAT=[],CSP=[],ZN=[],PROPS=[];let LV=
 /* ---- Ultra HD map props: sizes, sprite aspect, and the solid footprint (fractions of the sprite box) ---- */
 const PW={bush:88,bushW:76,bushB:66,rockL:86,rockS:56,rockC:104,crateL:56,crateS:40,barrels:92,sandbags:124,spikes:124,cross:62,banner1:44,banner2:40,banner3:104,tent:132,well:98,dragon:156};
 const ASP={"corner": 1.641, "dragon": 1.148, "banner1": 1.9104, "tent": 1.0204, "banner2": 1.7413, "well": 1.0651, "bush": 0.8838, "block": 1.4067, "rockL": 0.9806, "bushW": 0.984, "bushB": 0.9759, "cross": 0.8994, "barrels": 0.5898, "rockS": 1.0211, "spikes": 0.5547, "rockC": 0.5508, "pillar": 1.4184, "crateL": 1.121, "wallM": 0.4883, "banner3": 0.4648, "sandbags": 0.4414, "crateS": 1.1758, "wallL": 0.2695};
-const PCOL={bush:[.1,.9,.3,.96],bushW:[.1,.9,.3,.96],bushB:[.1,.9,.3,.96],rockL:[.08,.92,.3,.96],rockS:[.08,.92,.3,.96],rockC:[.04,.96,.28,.96],crateL:[.08,.92,.2,.97],crateS:[.08,.92,.2,.97],barrels:[.04,.96,.2,.97],sandbags:[.02,.98,.22,.97],spikes:[.02,.98,.15,.95],cross:[.1,.9,.2,.9],banner1:[.2,.8,.6,.98],banner2:[.2,.8,.6,.98],banner3:[.02,.98,.25,.97],tent:[.04,.96,.08,.96],well:[.05,.95,.3,.97],dragon:[.1,.92,.38,.97],pillar:[.08,.92,.5,.97],block:[.05,.95,.45,.97]};
+const PCOL={bush:[0.025,0.975,0.019,0.972],bushW:[0.032,0.968,0.032,0.968],bushB:[0.036,0.964,0.037,0.969],rockL:[0.029,0.971,0.025,0.97],rockS:[0.042,0.958,0.041,0.959],rockC:[0.02,0.98,0.014,0.965],crateL:[0.04,0.96,0.014,0.957],crateS:[0.044,0.956,0.056,0.944],barrels:[0.016,0.984,0.04,0.967],sandbags:[0.02,0.98,0.044,0.956],spikes:[0.02,0.98,0.021,0.965],cross:[0.034,0.966,0.031,0.963],banner1:[0.022,0.978,0.012,0.98],banner2:[0.042,0.958,0.012,0.976],banner3:[0.008,0.992,0.042,0.958],tent:[0.016,0.984,0.024,0.976],well:[0.028,0.972,0.026,0.974],dragon:[0.018,0.982,0.02,0.98],pillar:[0.051,0.949,0.043,0.957],block:[0.04,0.96,0.028,0.972]};
 let UX=0; // 1 = this match has solid Ultra HD props (host decides; sent to clients in the snapshot)
 const propRect=(n,x,y,w)=>{const h=w*ASP[n],c=PCOL[n],L=x-w/2,T=y-h+w*.08;return[L+w*c[0],T+h*c[2],w*(c[1]-c[0]),h*(c[3]-c[2]),1]};
 /* pillars / tower blocks standing on a wall rect: [sortY, sprite, anchorX, anchorY(feet), drawWidth] - used for drawing AND collision */
@@ -106,8 +106,10 @@ const BOT_DMG=.25; // bot damage multiplier (1 = same as players)
 const UC=[15,30,50,75,105],newUp=()=>Object.fromEntries(Object.keys(WP).map(k=>[k,[0,0,0,0]]));
 const eff=p=>{const W=WP[p.w],u=p.up[p.w];return{dmg:W.dmg*(1+.2*u[0]),rate:W.rate*(1-.09*u[1]),mag:W.mag+Math.round(W.mag*.3*u[2]),rel:W.rel*(1-.12*u[3])}};
 const rnd=a=>a[Math.random()*a.length|0],cl=(v,a,b)=>Math.max(a,Math.min(b,v));
-function push(p){for(const[x,y,w,h]of WALLS){const cx=cl(p.x,x,x+w),cy=cl(p.y,y,y+h),dx=p.x-cx,dy=p.y-cy,d=Math.hypot(dx,dy);
- if(d<R){if(!d)p.x+=R;else{p.x=cx+dx/d*R;p.y=cy+dy/d*R}}}p.x=cl(p.x,R,MW-R);p.y=cl(p.y,R,MH-R)}
+function push(p){for(let it=0;it<5;it++){let mv=0; // several passes: pushed out of one solid must not end up inside the next (corners between props)
+ for(const[x,y,w,h]of WALLS){const cx=cl(p.x,x,x+w),cy=cl(p.y,y,y+h),dx=p.x-cx,dy=p.y-cy,d=Math.hypot(dx,dy);
+  if(d<R){mv=1;if(d){p.x=cx+dx/d*R;p.y=cy+dy/d*R}else{const l=p.x-x,r=x+w-p.x,t=p.y-y,b=y+h-p.y,m=Math.min(l,r,t,b);if(m==l)p.x=x-R;else if(m==r)p.x=x+w+R;else if(m==t)p.y=y-R;else p.y=y+h+R}}}
+ if(!mv)break}p.x=cl(p.x,R,MW-R);p.y=cl(p.y,R,MH-R)}
 const inWall=(x,y)=>WALLS.some(([a,b,w,h])=>x>a&&x<a+w&&y>b&&y<b+h);
 const hitWall=(x0,y0,x1,y1)=>{const n=Math.max(1,Math.ceil(Math.hypot(x1-x0,y1-y0)/8));for(let i=1;i<=n;i++){const t=i/n;if(inWall(x0+(x1-x0)*t,y0+(y1-y0)*t))return 1}return 0}; // swept test: fast bullets can't skip thin objects
 const rng=()=>{SEED=SEED+0x6D2B79F5|0;let t=Math.imul(SEED^SEED>>>15,1|SEED);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296};
@@ -139,6 +141,8 @@ function setLevel(n,ux){LV=n;UX=ux===undefined?((window.GFXQ==null?2:window.GFXQ
   for(let i=0;i<60;i++){const w=WALLS[rr()*WALLS.length|0],hor=w[2]>=w[3],t=rr(),side=rr()<.5?-1:1; // banners hugging the walls
    const x=hor?w[0]+16+t*(w[2]-32):(side<0?w[0]-30:w[0]+w[2]+30),y=hor?(side<0?w[1]-26:w[1]+w[3]+40):w[1]+16+t*(w[3]-32);
    put(rr()<.55?'banner1':rr()<.5?'banner2':'banner3',x,y,.9+rr()*.2,0)}
+  if(UX){ // the whole sprite is solid now, so drop any prop that would cover a pickup pad, crate or the central crate
+   const keep=PROPS.filter(d=>{const r=propRect(d.n,d.x,d.y,PW[d.n]*d.s);return!PKP.concat(CHP).some(([px,py])=>px>r[0]-46&&px<r[0]+r[2]+46&&py>r[1]-46&&py<r[1]+r[3]+46)});PROPS.length=0;PROPS.push(...keep)}
   PROPS.sort((a,b)=>a.y-b.y);
   if(UX){ // make every prop and every wall pillar solid (players, bots and bullets all collide through WALLS)
    const base=WALLS.length;for(let i=0;i<base;i++)for(const p of wallPillars(WALLS[i]))WALLS.push(propRect(p[1],p[2],p[3],p[4]));
@@ -575,7 +579,7 @@ let curInp=IDLE,pend=[],eseq=0,nseq=0,sendAt=0,lastSig='',sentAt={},latchU={};
 function packP(p){return[p.id,nr1(p.x),nr1(p.y),Math.round(p.vx||0),Math.round(p.vy||0),nr3(p.a||0),nr1(p.hp),nr1(p.sh),p.w,p.am,nz(p.rel),nz(p.dc),nz(p.dt),nz(p.sp),nz(p.inv),p.al,p.k,p.d,p.c,p.ul,p.rf,p.kb,p.kw,p.dn,p.bl,p.kt,p.td,p.rc,p.sq|0,p.ia|0,p.pg|0,p.le|0,p.rv|0,p.mk|0]}
 function unpackP(r,R){const o={};for(let i=0;i<PF.length;i++)o[PF[i]]=r[i];const q=R[o.id];o.rs=Math.ceil(o.rf||0);o.name=q?q[0]:'Player';o.hue=q?q[1]:200;o.bot=q?q[2]:0;return o}
 function unpackSnap(m){const p=m.P.map(r=>unpackP(r,NW.R)),pm={};for(const o of p)pm[o.id]=o;
- return{p,pm,b:m.B.map(a=>({i:a[0],x:a[1],y:a[2],vx:a[3],vy:a[4],h:a[5],o:a[6],r:a[7]})),t:m.tr||[],bm:m.bm||[],w:m.w||null,lv:m.lv,k:NW.k,h:NW.h,n:NW.n,cr:NW.cr}}
+ return{p,pm,b:m.B.map(a=>({i:a[0],x:a[1],y:a[2],vx:a[3],vy:a[4],h:a[5],o:a[6],r:a[7]})),t:m.tr||[],bm:m.bm||[],w:m.w||null,lv:m.lv,ux:m.ux,k:NW.k,h:NW.h,n:NW.n,cr:NW.cr}}
 function applyWorld(m){NW.k=m.K.map(a=>({x:a[0],y:a[1],t:a[2],on:a[3],am:a[4],rv:a[5]}));NW.h=m.H.map(a=>({x:a[0],y:a[1],on:a[2]}));NW.n=m.N.map(a=>({id:a[0],x:a[1],y:a[2],v:a[3]}));NW.cr=(m.C||[]).map(a=>({id:a[0],x:a[1],y:a[2],it:a[3].map(b=>({u:b[0],t:b[1],am:b[2],rv:b[3],v:b[4]}))}));NW.R=m.R||{};NW.lv=m.lv||0;
  snap.k=NW.k;snap.h=NW.h;snap.n=NW.n;snap.cr=NW.cr;for(const p of snap.p){const q=NW.R[p.id];if(q){p.name=q[0];p.hue=q[1];p.bot=q[2]}}}
 
@@ -619,11 +623,11 @@ function sendDyn(now){
  evq=evq.filter(e=>now-e._t<2500&&e._i>minAck);if(evq.length>60)evq=evq.slice(-60);
  if(evc.length>60)evc=evc.slice(-60);
  const s=snap;for(const p of s.p){const q=sim.p[p.id];p.le=q&&q.lastE|0}
- net.send({t:'st',q:qSeq++,T:Math.round(now),ei:evSeq,lv:LV,P:s.p.map(packP),B:s.b.map(b=>[b.i,nr1(b.x),nr1(b.y),Math.round(b.vx),Math.round(b.vy),b.h,b.o,b.r]),tr:s.t,bm:s.bm,w:s.w,E:evq,C:evc});
+ net.send({t:'st',q:qSeq++,T:Math.round(now),ei:evSeq,lv:LV,ux:UX,P:s.p.map(packP),B:s.b.map(b=>[b.i,nr1(b.x),nr1(b.y),Math.round(b.vx),Math.round(b.vy),b.h,b.o,b.r]),tr:s.t,bm:s.bm,w:s.w,E:evq,C:evc});
  evc=[]}
 function sendWorld(now,force){
  const s=snap,R={};for(const id in sim.p){const p=sim.p[id];R[id]=[p.name,p.hue,p.bot?1:0]}
- const j=JSON.stringify({t:'wd',lv:LV,K:s.k.map(k=>[k.x,k.y,k.t,k.on,k.am,k.rv]),H:s.h.map(c=>[c.x,c.y,c.on]),N:s.n.map(c=>[c.id,c.x,c.y,c.v]),C:(s.cr||[]).map(c=>[c.id,c.x,c.y,c.it.map(i=>[i.u,i.t,i.am,i.rv,i.v])]),R});
+ const j=JSON.stringify({t:'wd',lv:LV,ux:UX,K:s.k.map(k=>[k.x,k.y,k.t,k.on,k.am,k.rv]),H:s.h.map(c=>[c.x,c.y,c.on]),N:s.n.map(c=>[c.id,c.x,c.y,c.v]),C:(s.cr||[]).map(c=>[c.id,c.x,c.y,c.it.map(i=>[i.u,i.t,i.am,i.rv,i.v])]),R});
  if(j===wdLast&&!force)return;wdLast=j;wdAt=now;net.send({t:'wd'},j)}
 function hostRecv(m){
  if(m.t=='in')hostIn(m);
