@@ -529,4 +529,6 @@ Resolution is never lowered (adaptive scaler locked to 100%, full device pixel r
 Screen vignette moved from a per-frame full-screen canvas blend to a CSS overlay (#csk-vig); the full-canvas clear is skipped when the arena tiles cover the view.
 
 ## v53
-Ornate screen frame (arena-frame.webp) drawn over the arena, under the HUD, stretched to the exact viewport on every device (cached at screen size, one 1:1 copy per frame).
+- Screen-edge vignette (`#csk-vig`) removed; battle-fx.js now deletes the element. Low-HP / hit red flashes are unchanged.
+- **Settings > RANK tab** (`rank.js`, styles at the end of `settings.css`): leaderboard ranked by coins collected (`st.cn`). Shows rank, Google profile picture, callsign and coins; your own row is highlighted and pinned at the bottom with your rank.
+- Cloud: each signed-in player's coins are copied to `leaderboard/<uid> {n,p,cn,t}` after every stats sync (game.js `lbWrite`). **Add the `leaderboard` block from `database.rules.rtc-snippet.json` to the Firebase rules** (read: any signed-in user; write: own uid only; index on `cn`). Top 100 are loaded.

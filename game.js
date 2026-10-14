@@ -981,15 +981,8 @@ function render(dt,now){if(snap.lv&&(snap.lv!=LV||(!sim&&snap.ux!==undefined&&(s
  if(bf)BFX.parts(parts,dt);else{for(const q of parts){q.l-=dt;q.x+=q.vx*dt;q.y+=q.vy*dt;q.vx*=.93;q.vy*=.93;cx.globalAlpha=Math.max(0,q.l/q.m);cx.fillStyle=q.c;cx.fillRect(q.x-q.s/2,q.y-q.s/2,q.s,q.s)}}cx.globalAlpha=1;parts=parts.filter(q=>q.l>0);
 if(bf)BFX.texts(texts,dt);else{for(const q of texts){q.l-=dt;q.y-=38*dt;cx.globalAlpha=Math.min(1,q.l*2.5);cx.fillStyle=q.c;cx.strokeStyle='#000b';cx.lineWidth=3;cx.font='bold 17px "Trebuchet MS",sans-serif';cx.textAlign='center';cx.strokeText(q.t,q.x,q.y);cx.fillText(q.t,q.x,q.y)}}texts=texts.filter(q=>q.l>0);cx.globalAlpha=1;
  if(bf)try{BFX.post(now,dt,m,hw,hh)}catch(x){if(!window.__bfE3){window.__bfE3=1;console.error('BFX post',x)}}
- try{frameDraw()}catch(x){}
  try{flyDraw(dt)}catch(x){}try{swapUI(m,mv)}catch(x){}try{crUI(m,mv)}catch(x){}
  hud(m,now,dt)}
-/* ornate screen frame: fixed to the screen edges on every device, stretched to the exact viewport, drawn under the HUD */
-const FRM=new Image();FRM.src='arena-frame.webp?v=53';
-let FRC=null;
-function frameDraw(){if(!FRM.naturalWidth)return;const W=cv.width,H=cv.height;
- if(!FRC||FRC.width!==W||FRC.height!==H){FRC=document.createElement('canvas');FRC.width=W;FRC.height=H;const g=FRC.getContext('2d');g.imageSmoothingEnabled=true;g.imageSmoothingQuality='high';g.drawImage(FRM,0,0,W,H)} /* scaled once per screen size, then a 1:1 copy each frame */
- cx.setTransform(1,0,0,1,0,0);cx.globalAlpha=1;cx.globalCompositeOperation='source-over';cx.drawImage(FRC,0,0)}
 
 /* ============ GUN PADS: swap prompt, pick animation ============ */
 const GN={smg:1,shotgun:1,rifle:1},SWMX=(()=>{const m={dps:0,rng:0,mag:0};for(const w in WP){const a=WP[w];m.dps=Math.max(m.dps,a.dmg*a.pel/a.rate);m.rng=Math.max(m.rng,a.spd*a.life);m.mag=Math.max(m.mag,a.mag)}return m})();
@@ -1449,6 +1442,10 @@ let base=hint?norm(J('ar-base')):Z();
 const S=()=>window.AR_ST?window.AR_ST.get():Z();
 const setS=o=>{try{window.AR_ST.set(o)}catch(e){}};
 const ref=p=>db.ref('users/'+user.uid+'/'+p);
+/* ---------- leaderboard: public copy of coins collected at leaderboard/<uid> {n,p,cn,t} ---------- */
+const lbName=()=>(locked||(($('nm')&&$('nm').value)||'').trim().slice(0,12)||'Player');
+function lbWrite(cn){try{if(!user||!db||denied)return;db.ref('leaderboard/'+user.uid).set({n:lbName(),p:String(user.photoURL||'').slice(0,500),cn:Math.max(0,Math.floor(+cn||0)),t:Date.now()}).catch(()=>{})}catch(e){}}
+async function lbList(){if(!initAuth())throw new Error('offline');const sn=await db.ref('leaderboard').orderByChild('cn').limitToLast(100).once('value'),a=[];sn.forEach(c=>{const v=c.val()||{};a.push({uid:c.key,name:String(v.n||'Player').slice(0,24),photo:String(v.p||''),cn:Math.max(0,+v.cn||0)})});a.sort((x,y)=>y.cn-x.cn);return a}
 const persist=()=>{LS('ar-stats',JSON.stringify(S()));LS('ar-base',JSON.stringify(base))};
 
 /* ---------- permanent callsign: chosen once per account, stored at users/<uid>/callsign ---------- */
@@ -1558,7 +1555,7 @@ function push(){if(!user||!db||denied)return Promise.resolve();if(inflight)retur
  if(!KEYS.some(k=>dl[k])&&sent.bs<=base.bs){dirty=false;return Promise.resolve()}
  dirty=false;inflight=true;setNote('Saving…');
  syncP=new Promise(res=>{try{ref('stats').transaction(cur=>{const c=norm(cur),o={};KEYS.forEach(k=>o[k]=c[k]+dl[k]);o.bs=Math.max(c.bs,sent.bs);return o},
-  (err,ok,snap)=>{inflight=false;if(err&&isDenied(err)){denied=true;setNote('Cloud save is not enabled yet (database rules)',1)}else if(err||!ok){dirty=true;setNote('Offline · will retry');timer=setTimeout(push,10000)}else{adopt(norm(snap.val()),sent);setNote('Saved '+clock())}res()},false)}
+  (err,ok,snap)=>{inflight=false;if(err&&isDenied(err)){denied=true;setNote('Cloud save is not enabled yet (database rules)',1)}else if(err||!ok){dirty=true;setNote('Offline · will retry');timer=setTimeout(push,10000)}else{{const cv=norm(snap.val());adopt(cv,sent);lbWrite(cv.cn)}setNote('Saved '+clock())}res()},false)}
   catch(e){inflight=false;dirty=true;res()}});
  return syncP}
 function applyProfile(p){if(!p){profile();return}
@@ -1578,10 +1575,10 @@ async function login(u){user=u;busy=false;
   KEYS.forEach(k=>nw[k]=c[k]+Math.max(0,s[k]-base[k]));nw.bs=Math.max(c.bs,s.bs);
   base=c;setS(nw);persist();dirty=KEYS.some(k=>nw[k]>c[k])||nw.bs>c.bs;
   const pf=await ref('profile').once('value'),pv=pf.val();await settleName(pv);applyProfile(pv);try{await syncLayout()}catch(e){console.warn('layout cloud sync:',e&&e.message||e)}
-  setNote('Saved to your account');if(dirty)push()}
+  setNote('Saved to your account');lbWrite(c.cn);if(dirty)push()}
  catch(e){if(isDenied(e)){denied=true;setNote('Cloud save is not enabled yet (database rules)',1);return}dirty=true;setNote('Offline · will sync later');setTimeout(()=>{if(user)login(user)},12000)}}
 function wipe(){LD('ar-stats');LD('ar-base');base=Z();if(!user||!db)return Promise.resolve();
- return Promise.race([ref('stats').set(Z()),sleep(2500)]).catch(()=>{})}
+ return Promise.race([ref('stats').set(Z()).then(()=>lbWrite(0)),sleep(2500)]).catch(()=>{})}
 
 /* ---------- sign in / out ---------- */
 function errText(c){return({'auth/unauthorized-domain':'This web address is not authorised for sign-in yet. Add it in Firebase → Authentication → Settings → Authorized domains.',
@@ -1607,7 +1604,7 @@ async function signOut(){if(busy)return;busy=true;ui('Saving…');
 
 /* ---------- hooks used by the game ---------- */
 function saveStats(st){if(!(user||hint)){ui();return}LS('ar-stats',JSON.stringify(st));dirty=true;if(user)schedule()}
-window.ARA={callsign:()=>locked||'',hint:()=>!!hint,saveStats:saveStats,profile:profile,wipe:wipe,flush:()=>{pushLayout();return push()},saveLayout:saveLayout,signedIn:()=>!!user,
+window.ARA={leaderboard:lbList,uid:()=>user?user.uid:(hint?hint.uid:''),callsign:()=>locked||'',hint:()=>!!hint,saveStats:saveStats,profile:profile,wipe:wipe,flush:()=>{pushLayout();return push()},saveLayout:saveLayout,signedIn:()=>!!user,
  account:()=>(user||hint)?{uid:(user||hint).uid,name:locked||(($('nm')&&$('nm').value)||'').trim().slice(0,12)||'Player',photo:(user&&user.photoURL)||(hint&&hint.photo)||''}:null,
  _t:{S:S,base:()=>base}};
 setTimeout(()=>{const b=$('acbtn');if(b)b.onclick=()=>(user||hint)?signOut():signIn();{const c=J('ar-cs');if(hint&&c&&c.uid==hint.uid&&c.name)lockName(String(c.name))}ui();attach();

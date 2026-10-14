@@ -9,7 +9,29 @@
     },
     "rooms": {
       "$code": {
-        "rtc": { ".read": true, ".write": true }
+        "rtc": {
+          ".read": true,
+          ".write": true
+        }
+      }
+    },
+    "leaderboard": {
+      ".indexOn": [
+        "cn"
+      ],
+      ".read": "auth != null",
+      "$uid": {
+        ".write": "auth != null && auth.uid === $uid",
+        ".validate": "newData.hasChildren(['n','cn']) && newData.child('n').isString() && newData.child('n').val().length <= 24 && newData.child('cn').isNumber() && newData.child('cn').val() >= 0",
+        "n": {},
+        "p": {
+          ".validate": "newData.isString() && newData.val().length <= 500"
+        },
+        "cn": {},
+        "t": {},
+        "$other": {
+          ".validate": false
+        }
       }
     }
   }

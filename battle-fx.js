@@ -503,10 +503,7 @@ function post(now,dt,m,hw,hh){
  try{if(window.PFQ)PFQ.lq=LITE?1:0}catch(e){}
  try{flashesDraw(dt);if(!LITE&&gfx()>0&&!ULTRA())ambient(now,dt,hw,hh)}catch(e){}
  const W=cv.width,H=cv.height,P=pal(),key=innerWidth+'x'+innerHeight+'|'+LV;
- if(vigKey!==key){ // screen vignette is a GPU-composited CSS layer (zero canvas cost per frame)
-  let el=document.getElementById('csk-vig');if(!el){el=document.createElement('div');el.id='csk-vig';el.style.cssText='position:fixed;inset:0;pointer-events:none;z-index:1';cv.insertAdjacentElement('afterend',el)}
-  const w=innerWidth,h=innerHeight,r0=Math.min(w,h)*.30,r1=Math.hypot(w,h)*.55,c=P.vig.join(',');
-  el.style.background=`radial-gradient(circle ${r1.toFixed(0)}px at 50% 50%,rgba(${c},0) ${r0.toFixed(0)}px,rgba(${c},.2) ${(r0+.6*(r1-r0)).toFixed(0)}px,rgba(${c},.78) ${r1.toFixed(0)}px)`;vigKey=key}
+ if(vigKey!==key){const el=document.getElementById('csk-vig');if(el)el.remove();vigKey=key} // screen-edge vignette removed (v53)
  cx.save();cx.setTransform(1,0,0,1,0,0);
  if(m&&m.al&&m.hp<40){const k=(40-m.hp)/40,pl=.5+.5*Math.sin(now/(150+m.hp*6));const g=cx.createRadialGradient(W/2,H/2,Math.min(W,H)*.32,W/2,H/2,Math.hypot(W,H)*.6);g.addColorStop(0,'rgba(255,30,20,0)');g.addColorStop(1,`rgba(255,30,20,${(.20+.34*pl)*k})`);cx.fillStyle=g;cx.fillRect(0,0,W,H)}
  if(hurtT>0){hurtT=Math.max(0,hurtT-dt*2.4);const g=cx.createRadialGradient(W/2,H/2,Math.min(W,H)*.38,W/2,H/2,Math.hypot(W,H)*.6);g.addColorStop(0,'rgba(255,40,30,0)');g.addColorStop(1,`rgba(255,40,30,${.22*hurtT})`);cx.fillStyle=g;cx.fillRect(0,0,W,H)}
